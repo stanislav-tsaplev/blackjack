@@ -7,7 +7,7 @@ import yaml
 
 from alembic import context
 from app.config import DbConfig
-from app.db.core.gino import db
+from app.db.core.gino import gino_orm
 
 
 with open(os.environ["CONFIGPATH"]) as config_file:
@@ -27,7 +27,7 @@ fileConfig(config.config_file_name)
 # for 'autogenerate' support
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
-target_metadata = db
+target_metadata = gino_orm
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
