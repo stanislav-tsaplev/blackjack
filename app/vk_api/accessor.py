@@ -1,21 +1,24 @@
 import random
-import typing
-from typing import Optional
+from typing import List, Optional
 
 from aiohttp import TCPConnector
 from aiohttp.client import ClientSession
 
 from app.db.base.accessor import BaseAccessor
 from app.vk_api.models import (
-    Update, Message, UpdateObject
+    VkApiUpdate,
+    VkApiConversationMembersResponse,
+    VkApiConversationMemberProfile,
 )
 from app.bot.poller import Poller
+from app.vk_api.utils import build_query_url
 
+import typing
 if typing.TYPE_CHECKING:
     from app.web.app import Application
 
 
-API_PATH = "https://api.vk.com/method/"
+VK_API_PATH = "https://api.vk.com/method/"
 
 class VkApiAccessor(BaseAccessor):
     def __init__(self, app: "Application", *args, **kwargs):
@@ -32,7 +35,7 @@ class VkApiAccessor(BaseAccessor):
 
         self.session = ClientSession(connector=TCPConnector(verify_ssl=False))
         try:
-            self.key, self.server, self.ts = await self._get_long_poll_service()
+            self.key, self.server, self.ts = await self._get_long_poll_server()
         except Exception as e:
             self.logger.error("exception during long poll service getting", exc_info=e)
             await self.session.close()
@@ -47,34 +50,30 @@ class VkApiAccessor(BaseAccessor):
         if self.poller:
             await self.poller.stop()
         if self.session:
-            await self.session.close()
+            await self.session.close()   
 
-    @staticmethod
-    def _build_query(api_path: str, api_method: str, params: dict) -> str:
-        params.setdefault("v", "5.131")
-
-        url = f"{api_path}{api_method}?" + \
-            "&".join([f"{k}={v}" for k, v in params.items()])
-        return url
-
-    async def _get_long_poll_service(self):
-        query_url = VkApiAccessor._build_query(
-            api_path=API_PATH,
+    async def _get_long_poll_server(self):
+        query_url = build_query_url(
+            api_path=VK_API_PATH,
             api_method="groups.getLongPollServer",
             params={
                 "group_id": self.app.config.bot.group_id,
                 "access_token": self.app.config.bot.token,
+                "lp_version": 3,
             },
         )
         async with self.session.get(query_url) as response:
-            json = await response.json()
-            data = json["response"]
-            self.logger.info(data)
+            if response.status == 200:
+                json = await response.json()
+                data = json["response"]
+                self.logger.info(data)
 
-            return data["key"], data["server"], data["ts"]
+                return data["key"], data["server"], data["ts"]
+            else:
+                self.logger.error(f"error during getting long poll server: {response}")
 
-    async def poll(self) -> list[Update]:
-        query_url = VkApiAccessor._build_query(
+    async def poll(self) -> list[VkApiUpdate]:
+        query_url = build_query_url(
             api_path=self.server,
             api_method="",
             params={
@@ -82,33 +81,45 @@ class VkApiAccessor(BaseAccessor):
                 "key": self.key,
                 "ts": self.ts,
                 "wait": 25,     # recommended value
+                "mode": 2,
+                "version": 3,
             },
         )
         async with self.session.get(query_url) as response:
-            data = await response.json()
-            self.logger.info(data)
+            json = await response.json()
+            self.logger.info(json)
 
-            self.ts = data["ts"]
+            if not "failed" in json:
+                self.ts = json["ts"]
 
-            raw_updates = data.get("updates", [])
-            return [Update(type=raw_update["type"],
-                            object=UpdateObject(
-                                id=raw_update["object"]["message"]["id"],
-                                user_id=raw_update["object"]["message"]["from_id"],
-                                body=raw_update["object"]["message"]["text"],
-                            )
-                    )
-                    for raw_update in raw_updates]
+                try:
+                    json_updates = json.get("updates", [])
+                    return [VkApiUpdate.from_dict(json_update)
+                                for json_update in json_updates]
+                except Exception as e:
+                    self.logger.error("exception during update parsing", exc_info=e)
+            else:
+                # "{"failed":1,"ts":$new_ts}— история событий устарела или была частично утеряна, 
+                #  приложение может получать события далее, 
+                #  используя новое значение ts из ответа.
 
-    async def send_message(self, message: Message) -> None:
-        query_url = VkApiAccessor._build_query(
-            api_path=API_PATH,
+                # {"failed":2} — истекло время действия ключа, 
+                #  нужно заново получить key методом messages.getLongPollServer.
+
+                # {"failed":3} — информация о пользователе утрачена, 
+                #  нужно запросить новые key и ts методом messages.getLongPollServer.
+
+                # TODO: implement handling for the failures above
+                self.logger.error("error during getting updates")
+
+    async def send_message(self, peer_id: int, text: str) -> None:
+        query_url = build_query_url(
+            api_path=VK_API_PATH,
             api_method="messages.send",
             params={
-                "user_id": message.user_id,
                 "random_id": random.randint(1, 2**32),
-                "peer_id": f"-{self.app.config.bot.group_id}",
-                "message": message.text,
+                "peer_id": peer_id,
+                "message": text,
                 "access_token": self.app.config.bot.token,
             },
         )
@@ -120,4 +131,32 @@ class VkApiAccessor(BaseAccessor):
                 sent_message_id = int(json["response"])
                 self.logger.info(f"message sent with id: {sent_message_id}")
             else:
-                self.logger.info(json)
+                self.logger.error("error during message sending")
+
+    async def get_active_member_profiles(self, peer_id: int
+    ) -> List[VkApiConversationMemberProfile]:
+        query_url = build_query_url(
+            api_path=VK_API_PATH,
+            api_method="messages.getConversationMembers",
+            params={
+                "peer_id": peer_id,
+                "fields": "online",
+                "access_token": self.app.config.bot.token,
+            },
+        )
+        async with self.session.get(query_url) as response:
+            json = await response.json()
+
+            if not "error" in json:
+                chat_members_info = VkApiConversationMembersResponse.from_dict(json["response"])
+                # self.logger.info(f"all members in chat {peer_id}: {chat_members_info}")
+                active_chat_member_profiles = [
+                    profile for profile 
+                    in chat_members_info.profiles 
+                    if profile.online
+                ]
+
+                self.logger.info(f"active members in chat {peer_id}: {active_chat_member_profiles}")
+                return active_chat_member_profiles
+            else:
+                self.logger.error(f"error during getting chat members: {json}")

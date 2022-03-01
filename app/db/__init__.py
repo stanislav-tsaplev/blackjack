@@ -12,12 +12,7 @@ from app.db.game.accessors import *
 @dataclass
 class Storage:
     admins: AdminAccessor
-    
-    users: UserAccessor
-    players: PlayerAccessor
-    game_chats: GameChatAccessor
-    game_sessions: GameSessionAccessor
-    player_sessions: PlayerSessionAccessor
+    games: GameAccessor
     
 
 def setup_db(app: "Application"):
@@ -27,10 +22,5 @@ def setup_db(app: "Application"):
 
     app.storage = Storage(
         admins = AdminAccessor(app),
-    
-        users = UserAccessor(app),
-        players = PlayerAccessor(app),
-        game_chats = GameChatAccessor(app),
-        game_sessions = GameSessionAccessor(app),
-        player_sessions = PlayerSessionAccessor(app),
+        games = GameAccessor(app)
     )
