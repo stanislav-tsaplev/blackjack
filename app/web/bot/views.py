@@ -12,7 +12,7 @@ from aiohttp.web_exceptions import (
 from app.web.app import View
 from app.web.mixins import AuthRequiredMixin
 from app.web.utils import json_response
-from app.db.bot.models import (
+from app.db.game.models import (
     Player, 
     PlayerSession
 )

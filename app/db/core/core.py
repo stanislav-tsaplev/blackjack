@@ -1,19 +1,19 @@
-from logging import getLogger
+from sqlalchemy.engine.url import URL
 import gino
 from gino.api import Gino
-from sqlalchemy.engine.url import URL
+from logging import getLogger
 
-from app.db.core.gino import db
+from app.db.core.gino import gino_orm
 from app.db.admin.models import *
-from app.db.bot.models import *
+from app.db.game.models import *
 
 
-class DB:
-    db: Optional[Gino]
+class Database:
+    orm: Optional[Gino]
 
     def __init__(self, app: "Application"):
         self.app = app
-        self.db: Optional[Gino] = None
+        self.orm: Optional[Gino] = None
 
         self.logger = getLogger(self.__class__.__name__)
 
@@ -32,13 +32,13 @@ class DB:
             min_size=1,
             max_size=1,
         )
-        self.db = db
-        self.db.bind = self._engine
+        self.orm = gino_orm
+        self.orm.bind = self._engine
         
 
     async def disconnect(self, *args, **kwargs):
         self.logger.info('disconnect')
-        if self.db:
-            await self.db.pop_bind().close()
-            self.db = None
+        if self.orm:
+            await self.orm.pop_bind().close()
+            self.orm = None
             self._engine = None

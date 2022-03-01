@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from hashlib import sha256
 from typing import Optional
 
-from app.db.core.gino import db
+from app.db.core.gino import gino_orm as db
 
 
 @dataclass

@@ -1,3 +1,3 @@
 from gino import Gino
 
-db = Gino()
+gino_orm = Gino()

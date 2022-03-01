@@ -1,7 +1,9 @@
 from dataclasses import dataclass
+from enum import IntEnum
+from datetime import datetime
 from typing import Optional
 
-from app.db.core.gino import db
+from app.db.core.gino import gino_orm as db
 
 
 @dataclass
@@ -39,7 +41,58 @@ class PlayerModel(db.Model):
     vk_id = db.Column(db.Integer(), primary_key=True)
     chat_id = db.Column(db.Integer(), primary_key=True)
     money = db.Column(db.Integer(), default=0)
+
+
+class GameSessionState(IntEnum):
+    OPENED = 0
+    CLOSED = 1
+    TERMINATED = 2
+
+
+@dataclass
+class GameSession:
+    id: int
+    chat_id: int
+    started_at: datetime
+    closed_at: Optional[datetime]
+    state: GameSessionState
     
+    @classmethod
+    def from_session(cls, session: Optional[dict]) -> Optional["GameSession"]:
+        if session is None:
+            return None
+
+        return cls(
+            id=session["game_session"]["id"], 
+            chat_id=session["player_session"]["chat_id"],
+            started_at=session["player_session"]["started_at"],
+            closed_at=session["player_session"]["closed_at"],
+            state=session["player_session"]["state"]
+        )
+
+    @classmethod
+    def from_gino_model(cls, model: Optional["GameSessionModel"]) -> Optional["GameSession"]:
+        if model is None:
+            return None
+            
+        return cls(
+            id=model.id,
+            chat_id=model.chat_id,
+            started_at=model.started_at,
+            closed_at=model.closed_at,
+            state=model.state,
+        )
+
+
+class GameSessionModel(db.Model):
+    __tablename__ = "game_sessions"
+
+    id = db.Column(db.Integer(), primary_key=True, autoincrement=True)
+    chat_id= db.Column(db.Integer())
+    started_at = db.Column(db.DateTime())
+    closed_at = db.Column(db.DateTime(), nullable=True)
+    state = db.Column(db.Enum(GameSessionState), default=GameSessionState.OPENED.value)
+
 
 @dataclass
 class PlayerSession:
@@ -53,8 +106,9 @@ class PlayerSession:
             return None
 
         return cls(
-            id=session["player_session"]["vk_id"], 
-            email=session["player_session"]["chat_id"]
+            vk_id=session["player_session"]["vk_id"], 
+            session_id=session["player_session"]["session_id"],
+            gain=session["player_session"]["gain"]
         )
 
     @classmethod

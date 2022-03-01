@@ -1,29 +1,36 @@
 import typing
 
-from app.db.core.core import DB
+from app.db.core.core import Database
 
 if typing.TYPE_CHECKING:
     from app.web.app import Application
 
 from app.db.admin.accessor import AdminAccessor
-from app.db.bot.accessors import (
-    UserAccessor,
-    PlayerAccessor,
-    GameChatAccessor,
-    GameSessionAccessor,
-    PlayerSessionAccessor,
-)
+from app.db.game.accessors import *
 
+
+@dataclass
+class Storage:
+    admins: AdminAccessor
+    
+    users: UserAccessor
+    players: PlayerAccessor
+    game_chats: GameChatAccessor
+    game_sessions: GameSessionAccessor
+    player_sessions: PlayerSessionAccessor
+    
 
 def setup_db(app: "Application"):
-    app.db = DB(app)
-    app.on_startup.append(app.db.connect)
-    app.on_cleanup.append(app.db.disconnect)
+    app.database = Database(app)
+    app.on_startup.append(app.database.connect)
+    app.on_cleanup.append(app.database.disconnect)
 
-    app.admins = AdminAccessor(app)
+    app.storage = Storage(
+        admins = AdminAccessor(app),
     
-    app.users = UserAccessor(app)
-    app.players = PlayerAccessor(app)
-    app.game_chats = GameChatAccessor(app)
-    app.game_sessions = GameSessionAccessor(app)
-    app.player_sessions = PlayerSessionAccessor(app)
+        users = UserAccessor(app),
+        players = PlayerAccessor(app),
+        game_chats = GameChatAccessor(app),
+        game_sessions = GameSessionAccessor(app),
+        player_sessions = PlayerSessionAccessor(app),
+    )

@@ -9,7 +9,7 @@ from aiohttp_apispec import setup_aiohttp_apispec
 from aiohttp_session import setup as setup_session
 from aiohttp_session.cookie_storage import EncryptedCookieStorage
 
-from app.db.core.core import DB
+from app.db.core.core import Database
 from app.db.admin.models import Admin
 from app.logger import setup_logging
 from app.config import Config, setup_config
@@ -22,7 +22,7 @@ from app.bot import setup_bot_manager
 
 class Application(AiohttpApplication):
     config: Optional[Config] = None
-    DB: Optional[DB] = None
+    database: Optional[Database] = None
 
 
 class Request(AiohttpRequest):
