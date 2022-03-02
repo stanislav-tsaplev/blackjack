@@ -1,9 +1,9 @@
-from logging.config import fileConfig
 import os
+from logging.config import fileConfig
 
+import yaml
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
-import yaml
 
 from alembic import context
 from app.config import DbConfig
@@ -13,7 +13,6 @@ from app.db.core.gino import gino_orm
 with open(os.environ["CONFIGPATH"]) as config_file:
     config_data = yaml.safe_load(config_file)
     db_config = DbConfig(**config_data.get("db", {}))
-
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -33,7 +32,6 @@ target_metadata = gino_orm
 # can be acquired:
 # my_important_option = config.get_main_option("my_important_option")
 # ... etc.
-
 
 def set_sqlalchemy_url(host: str, port: int, user: str, password: str, dbname: str):
     config.set_main_option(
@@ -75,7 +73,7 @@ def run_migrations_online():
 
     """
     set_sqlalchemy_url(**db_config.__dict__)
-
+    
     connectable = engine_from_config(
         config.get_section(config.config_ini_section),
         prefix="sqlalchemy.",
