@@ -31,11 +31,12 @@ class BotManager:
         current_game_session = await self.app.storage.games.get_current_game_session(chat_id)
         if current_game_session is None:
             active_member_profiles = await self.app.vk_api \
-                                        .get_active_member_profiles(chat_id)
-            user_ids = [profile.id for profile in active_member_profiles]
-            
+                                        .get_active_member_profiles(chat_id)            
             created_game_session = await self.app.storage.games \
-                                        .create_game_session(chat_id, user_ids)
+                                        .create_game_session(
+                                            chat_id, 
+                                            active_member_profiles
+                                        )
             
             await self.app.vk_api.send_message(
                 chat_id, 
@@ -46,7 +47,6 @@ class BotManager:
                     chat_id, 
                     f"{index}) {profile.first_name} {profile.last_name}"
                 )
-
         else:
             await self.app.vk_api.send_message(chat_id, VK_MESSAGES["game.already_started"])
 
