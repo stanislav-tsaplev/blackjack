@@ -6,7 +6,7 @@ if typing.TYPE_CHECKING:
     from app.web.app import Application
 
 from app.db.admin.accessor import AdminAccessor
-from app.db.game.accessors import *
+from app.db.game.accessor import *
 
 
 @dataclass

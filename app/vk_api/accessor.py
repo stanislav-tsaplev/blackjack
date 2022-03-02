@@ -7,8 +7,8 @@ from aiohttp.client import ClientSession
 from app.db.base.accessor import BaseAccessor
 from app.vk_api.models import (
     VkApiUpdate,
-    VkApiConversationMembersResponse,
-    VkApiConversationMemberProfile,
+    VkApiMembersResponse,
+    VkApiMemberProfile,
 )
 from app.bot.poller import Poller
 from app.vk_api.utils import build_query_url
@@ -134,7 +134,7 @@ class VkApiAccessor(BaseAccessor):
                 self.logger.error("error during message sending")
 
     async def get_active_member_profiles(self, peer_id: int
-    ) -> List[VkApiConversationMemberProfile]:
+    ) -> List[VkApiMemberProfile]:
         query_url = build_query_url(
             api_path=VK_API_PATH,
             api_method="messages.getConversationMembers",
@@ -148,8 +148,7 @@ class VkApiAccessor(BaseAccessor):
             json = await response.json()
 
             if not "error" in json:
-                chat_members_info = VkApiConversationMembersResponse.from_dict(json["response"])
-                # self.logger.info(f"all members in chat {peer_id}: {chat_members_info}")
+                chat_members_info = VkApiMembersResponse.from_dict(json["response"])
                 active_chat_member_profiles = [
                     profile for profile 
                     in chat_members_info.profiles 

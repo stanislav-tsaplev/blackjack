@@ -49,7 +49,7 @@ class VkApiUpdate:
 ################
 
 @dataclass
-class VkApiConversationMemberProfile:
+class VkApiMemberProfile:
     id: int
     first_name: str
     last_name: str
@@ -65,16 +65,16 @@ class VkApiConversationMemberProfile:
         )
 
 @dataclass
-class VkApiConversationMembersResponse:
+class VkApiMembersResponse:
     count: int
-    profiles: List[VkApiConversationMemberProfile]
+    profiles: List[VkApiMemberProfile]
 
     @classmethod
     def from_dict(cls, d):
         return cls(
             count = int(d.get("count")),
             profiles = [
-                VkApiConversationMemberProfile.from_dict(profile)
+                VkApiMemberProfile.from_dict(profile)
                 for profile in d.get("profiles")
             ],
         )
