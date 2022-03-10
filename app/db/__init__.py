@@ -7,21 +7,29 @@ if TYPE_CHECKING:
     from app.web.app import Application
 
 from app.db.admin.accessor import AdminAccessor
-from app.db.game.accessor import *
+from app.db.game.accessors import *
 
 
 @dataclass
-class Storage:
+class Store:
     admins: AdminAccessor
-    games: GameAccessor
+    players: PlayerAccessor
+    game_sessions: GameSessionAccessor
+    player_sessions: PlayerSessionAccessor
+    player_dataports: PlayerDataportAccessor
+    card_deals: CardDealAccessor
     
 
-def setup_db(app: "Application"):
+def setup_database(app: "Application"):
     app.database = Database(app)
     app.on_startup.append(app.database.connect)
     app.on_cleanup.append(app.database.disconnect)
 
-    app.storage = Storage(
-        admins = AdminAccessor(app),
-        games = GameAccessor(app)
+    app.db_store = Store(
+        admins=AdminAccessor(app),
+        players=PlayerAccessor(app),
+        game_sessions=GameSessionAccessor(app),
+        player_sessions=PlayerSessionAccessor(app),
+        player_dataports=PlayerDataportAccessor(app),
+        card_deals=CardDealAccessor(app),
     )

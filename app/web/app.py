@@ -15,14 +15,18 @@ from app.logger import setup_logging
 from app.config import Config, setup_config
 from app.web.routes import setup_routes
 from app.web.middlewares import setup_middlewares
-from app.db import setup_db
-from app.vk_api import setup_vk_api
-from app.bot import setup_bot_manager
+from app.db import Store, setup_database
+from app.vk_api import VkApiAccessor, setup_vk_api
+from app.bot import BotManager, setup_bot_manager
 
 
 class Application(AiohttpApplication):
     config: Optional[Config] = None
     database: Optional[Database] = None
+    
+    db_store: Optional[Store] = None
+    vk_api: Optional[VkApiAccessor] = None
+    bot: Optional[BotManager] = None
 
 
 class Request(AiohttpRequest):
@@ -55,9 +59,8 @@ def setup_app(config_path: str) -> Application:
     setup_aiohttp_apispec(app, title="Vk Blackjack Bot", 
                             url="/docs/json", swagger_path="/docs")
     setup_middlewares(app)
-    setup_db(app)
+    setup_database(app)
     setup_vk_api(app)
     setup_bot_manager(app)
 
-    
     return app

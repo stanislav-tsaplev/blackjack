@@ -39,6 +39,6 @@ class Admin:
 class AdminModel(db.Model):
     __tablename__ = "admins"
 
-    id = db.Column(db.Integer(), primary_key=True)
-    email = db.Column(db.String())
-    password = db.Column(db.String(), nullable=True)
+    id = db.Column(db.Integer, primary_key=True)
+    email = db.Column(db.String)
+    password = db.Column(db.String, nullable=True)
