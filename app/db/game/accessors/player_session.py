@@ -96,8 +96,24 @@ class PlayerSessionAccessor(BaseAccessor):
             )
         ).gino.all()
     
-    async def take_player_bet(self, player_session: PlayerSession, bet: int) -> None:
-        await player_session.update(bet=bet, state=PlayerSessionState.WAITING).apply()
+    async def take_player_bet(self, player_session: PlayerSession, bet: int) -> bool:
+        async with self.app.database.orm.transaction() as tx:
+            player = await Player.update.where(
+                Player.id == player_session.player.id
+            ).values(
+                money=Player.money - bet
+            ).returning(Player.money).gino.one()
+
+            if player.money < 0:
+                tx.raise_rollback()
+                return False
+
+            await player_session.update(
+                bet=bet, 
+                state=PlayerSessionState.WAITING
+            ).apply()
+
+            return True
 
     async def break_out_player(self, player_session: PlayerSession, 
                                             breakout_reason: str) -> None:
@@ -111,14 +127,14 @@ class PlayerSessionAccessor(BaseAccessor):
     async def pay_out_player(self, player_session: PlayerSession, 
                                             payout_ratio: int) -> None:
         async with self.app.database.orm.transaction() as tx:
+            gain = player_session.bet * payout_ratio
+            await player_session.player.update(
+                money=Player.money + gain
+            ).apply()
+
             await player_session.update(
                 state=PlayerSessionState.PAIDOUT,
                 payout_ratio=payout_ratio
-            ).apply()
-
-            profit = player_session.bet * (payout_ratio - 1)
-            await player_session.player.update(
-                money=Player.money + profit
             ).apply()
 
     async def cut_out_player(self, player_session: PlayerSession) -> None:

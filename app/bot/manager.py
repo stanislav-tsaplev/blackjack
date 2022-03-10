@@ -37,8 +37,11 @@ class BotManager:
             "игра": self.launch_game,
             "hand": self.show_player_hand,
             "рука": self.show_player_hand,
-            # "money": self.show_player_money,
-            # "сумма": self.show_player_money,
+            "money": self.show_player_money,
+            "сумма": self.show_player_money,
+            "quit": self.cut_out_player,
+            "exit": self.cut_out_player,
+            "выход": self.cut_out_player,
             # "stop": self.terminate_game,
             # "стоп": self.terminate_game,
         }
@@ -169,32 +172,38 @@ class BotManager:
                                                         bet_request_message_id, 
                                                         bet_request_text_template)
             player_response = await self.get_deferred_player_response(
-                                user_id=user_profile.vk_id,
-                                chat_id=game_session.chat_id, 
-                                countdown_callback=bet_request_countdown_callback)
+                                                        user_id=user_profile.vk_id,
+                                                        chat_id=game_session.chat_id, 
+                                                        countdown_callback=
+                                                            bet_request_countdown_callback)
 
             if player_response is not None:
                 bet = player_response["bet"]
-                await self.app.db_store.player_sessions.take_player_bet(
-                                                            player_session, bet=bet)
-                await self.app.vk_api.send_message(game_session.chat_id,
+                success = await self.app.db_store.player_sessions.take_player_bet(
+                                                                player_session, bet=bet)
+                if success:
+                    await self.app.vk_api.send_message(game_session.chat_id,
                                                 f'{BOT_MESSAGES["game.player"]} '
                                                 f'{BOT_MESSAGES["bet.accepted"]}'.format(
                                                     first_name=user_profile.first_name,
-                                                    last_name=user_profile.last_name)
-                                                )
+                                                    last_name=user_profile.last_name))
+                else:
+                    await self.app.db_store.player_sessions.cut_out_player(player_session)
+                    await self.app.vk_api.send_message(game_session.chat_id,
+                                                f'{BOT_MESSAGES["game.player"]} '
+                                                f'{BOT_MESSAGES["bet.rejected"]}'.format(
+                                                    first_name=user_profile.first_name,
+                                                    last_name=user_profile.last_name))
             else:
                 await self.app.db_store.player_sessions.cut_out_player(player_session)
                 await self.app.vk_api.send_message(game_session.chat_id,
                                                 f'{BOT_MESSAGES["game.player"]} '
                                                 f'{BOT_MESSAGES["bet.discarded"]}'.format(
                                                     first_name=user_profile.first_name,
-                                                    last_name=user_profile.last_name) 
-                                                )
-            await self.app.db_store.player_dataports \
-                                            .clear_player_dataport(
-                                                user_id=user_profile.vk_id,
-                                                chat_id=game_session.chat_id)
+                                                    last_name=user_profile.last_name))
+            await self.app.db_store.player_dataports.clear_player_dataport(
+                                                        user_id=user_profile.vk_id,
+                                                        chat_id=game_session.chat_id)
         await self.app.vk_api.send_message(game_session.chat_id,
                                                 BOT_MESSAGES["bet.completed"])
 
@@ -346,7 +355,7 @@ class BotManager:
         await self.app.vk_api.send_message(game_session.chat_id, BOT_MESSAGES["dealer.start"])
         dealer_session = await self.app.db_store.player_sessions \
                                                     .create_dealer_session(game_session)
-        await asyncio.sleep(1)
+        await asyncio.sleep(2)
 
         # since dealing card is random, there is no difference when it is occured
         card = get_random_card()
@@ -354,19 +363,19 @@ class BotManager:
         await self.app.db_store.card_deals.add_cards(dealer_session, (card,))
         await self.app.vk_api.send_message(game_session.chat_id,
                                             f'{BOT_MESSAGES["dealer.initial"]} {card}')
-        await asyncio.sleep(2)
+        await asyncio.sleep(1)
 
         while dealer_hand.score < 17:
             await self.app.vk_api.send_message(game_session.chat_id, 
                                                         BOT_MESSAGES["dealer.hit"])
-            await asyncio.sleep(1)
+            await asyncio.sleep(2)
 
             card = get_random_card()
             dealer_hand.take(card)
             await self.app.db_store.card_deals.add_cards(dealer_session, (card,))
             await self.app.vk_api.send_message(game_session.chat_id,
                                             f'{BOT_MESSAGES["dealer.new_card"]} {card}')
-            await asyncio.sleep(2)
+            await asyncio.sleep(1)
             
             if dealer_hand.is_bust():
                 await self.app.vk_api.send_message(game_session.chat_id,
@@ -385,7 +394,7 @@ class BotManager:
                                                         BOT_MESSAGES["dealer.stand"])
             await self.app.vk_api.send_message(game_session.chat_id,
                                             f'{BOT_MESSAGES["dealer.hand"]} {dealer_hand}')
-        await asyncio.sleep(1)
+        await asyncio.sleep(2)
 
     async def paying_out(self, game_session: GameSession):
         dealer_session = await self.app.db_store.player_sessions \
@@ -405,8 +414,7 @@ class BotManager:
                                         f'{BOT_MESSAGES["game.player"]} '
                                         f'{BOT_MESSAGES["payout.player_bust"]}'.format(
                                             first_name=user_profile.first_name,
-                                            last_name=user_profile.last_name)
-                                        )
+                                            last_name=user_profile.last_name))
                 player_payout_ratio = 0
             elif dealer_hand.is_bust():
                 await self.app.vk_api.send_message(game_session.chat_id,
@@ -414,8 +422,7 @@ class BotManager:
                                         f'{BOT_MESSAGES["payout.dealer_bust"]}'.format(
                                             first_name=user_profile.first_name,
                                             last_name=user_profile.last_name,
-                                            gain=player_session.bet * 2)
-                                        )
+                                            gain=player_session.bet * 2))
                 player_payout_ratio = 2
             else:
                 player_hand = await self.app.db_store.card_deals \
@@ -427,8 +434,7 @@ class BotManager:
                                             f'{BOT_MESSAGES["payout.player_win"]}'.format(
                                                 first_name=user_profile.first_name,
                                                 last_name=user_profile.last_name,
-                                                gain=player_session.bet * 2)
-                                            )
+                                                gain=player_session.bet * 2))
                     player_payout_ratio = 2
                 elif score_diff == 0:
                     await self.app.vk_api.send_message(game_session.chat_id,
@@ -444,8 +450,7 @@ class BotManager:
                                             f'{BOT_MESSAGES["game.player"]} '
                                             f'{BOT_MESSAGES["payout.player_lose"]}'.format(
                                                 first_name=user_profile.first_name,
-                                                last_name=user_profile.last_name)
-                                            )
+                                                last_name=user_profile.last_name))
                     player_payout_ratio = 0
 
             await self.app.db_store.player_sessions \
@@ -458,18 +463,44 @@ class BotManager:
         player_session = await self.app.db_store.player_sessions \
                                     .get_current_player_session(user_id, chat_id)
         if player_session is None:
+            await self.app.vk_api.send_message(chat_id, BOT_MESSAGES["player_info.out_of_game"])
             return
 
         user_profile = player_session.player.user_profile
-        hand = await self.app.db_store.card_deals.get_player_hand(player_session)               
-        await self.app.vk_api.send_message(player_session.game_session.chat_id,
-                                            f'{BOT_MESSAGES["game.player"]} '
-                                            f'{BOT_MESSAGES["deal.hand"]} '
-                                            f'{hand}'.format(
-                                                first_name=user_profile.first_name,
-                                                last_name=user_profile.last_name)
-                                            )
-            
+        hand = await self.app.db_store.card_deals.get_player_hand(player_session)
+        await self.app.vk_api.send_message(chat_id,
+                                f'{BOT_MESSAGES["game.player"]} '
+                                f'{BOT_MESSAGES["player_info.hand"]} '
+                                f'{hand}'.format(
+                                    first_name=user_profile.first_name,
+                                    last_name=user_profile.last_name))
+
+    async def show_player_money(self, chat_id: int, user_id: int):
+        player = await self.app.db_store.players.get_player(user_id, chat_id)
+        if player is None:
+            return
+                       
+        await self.app.vk_api.send_message(chat_id,
+                                f'{BOT_MESSAGES["game.player"]} '
+                                f'{BOT_MESSAGES["player_info.money"]} '
+                                f'{player.money}'.format(
+                                    first_name=player.user_profile.first_name,
+                                    last_name=player.user_profile.last_name))
+
+    async def cut_out_player(self, chat_id: int, user_id: int):
+        player_session = await self.app.db_store.player_sessions \
+                                    .get_current_player_session(user_id, chat_id)
+        if player_session is None:
+            return
+
+        user_profile = player_session.player.user_profile
+        await self.app.db_store.player_sessions.cut_out_player(player_session)
+        await self.app.vk_api.send_message(chat_id,
+                                f'{BOT_MESSAGES["game.player"]} '
+                                f'{BOT_MESSAGES["game.exit"]}'.format(
+                                    first_name=user_profile.first_name,
+                                    last_name=user_profile.last_name))
+
     async def handle_command(self, message: VkApiMessage):
         command = message.text[1:]
         command_handler = self.command_handlers.get(command)

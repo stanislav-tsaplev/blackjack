@@ -11,7 +11,9 @@ class PlayerAccessor(BaseAccessor):
         await super().connect(app)
 
     async def get_player(self, user_id: int, chat_id: int) -> Optional[Player]:
-        return await Player.query.where(
+        return await Player.load(
+            user_profile=UserProfile
+        ).where(
             db.and_(
                 Player.vk_id == user_id,
                 Player.chat_id == chat_id

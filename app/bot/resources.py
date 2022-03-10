@@ -2,15 +2,21 @@ import json
 
 
 BOT_MESSAGES = {
+    "player_info.money": "У вас в кошельке:",
+    "player_info.hand": "У вас на руке:",
+    "player_info.out_of_game": "⏻ Эта информация доступна только в ходе игры",
+    
     "game.already_started": "⏻ Игра уже идет. Чтобы начать новую игру, завершите текущую",
     "game.start": "⏻ Игра начата",
     "game.players_list_header": "⏻ Приглашаются:",
     "game.player": "⏿ [{first_name} {last_name}]",
+    "game.exit": "Вы вышли из игры",
     "game.end": "⏻ Игра окончена. Всем спасибо за участие",
     
     "bet.started": "⏻ Делайте ваши ставки, господа!",
     "bet.request": "Делайте вашу ставку:",
     "bet.accepted": "Ставка принята",
+    "bet.rejected": "Ставка отклонена. У вас недостаточно денег",
     "bet.discarded": "К сожалению, вы не участвуете в игре",
     "bet.completed": "⏻ Ставки сделаны. Начинаем игру",
     
