@@ -1,4 +1,7 @@
-from typing import Optional
+from typing import (
+    Optional, Union, Callable, Mapping, 
+    TYPE_CHECKING
+)
 from logging import getLogger
 
 from app.vk_api.models import VkApiUpdate

@@ -1,5 +1,5 @@
 import random
-from typing import List, Optional
+from typing import List, Optional, TYPE_CHECKING
 
 from aiohttp import TCPConnector
 from aiohttp.client import ClientSession
@@ -13,8 +13,7 @@ from app.vk_api.models import (
 from app.bot.poller import Poller
 from app.vk_api.utils import build_query_url
 
-import typing
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from app.web.app import Application
 
 

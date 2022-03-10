@@ -1,9 +1,9 @@
-import typing
+from typing import TYPE_CHECKING
 from dataclasses import dataclass
 
 import yaml
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from app.web.app import Application
 
 
@@ -20,6 +20,7 @@ class AdminConfig:
 
 @dataclass
 class BotConfig:
+    name: str
     token: str
     group_id: int
 

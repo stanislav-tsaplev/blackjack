@@ -1,11 +1,10 @@
-import typing
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 from hashlib import sha256
 
 from app.db.base.accessor import BaseAccessor
 from app.db.admin.models import Admin, AdminModel
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from app.web.app import Application
 
 

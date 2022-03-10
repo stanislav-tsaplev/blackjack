@@ -1,7 +1,7 @@
+from typing import TYPE_CHECKING
 import logging
-import typing
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from app.web.app import Application
 
 

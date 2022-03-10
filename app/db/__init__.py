@@ -1,8 +1,9 @@
-import typing
+from typing import TYPE_CHECKING
+from dataclasses import dataclass
 
 from app.db.core.core import Database
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from app.web.app import Application
 
 from app.db.admin.accessor import AdminAccessor

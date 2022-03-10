@@ -1,5 +1,5 @@
+from typing import TYPE_CHECKING
 import json
-import typing
 
 from aiohttp.web_exceptions import (HTTPUnprocessableEntity, HTTPException)
 from aiohttp.web_middlewares import middleware
@@ -9,7 +9,7 @@ from aiohttp_session import get_session
 from app.db.admin.models import Admin
 from app.web.utils import error_json_response
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from app.web.app import Application, Request
 
 
