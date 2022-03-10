@@ -62,14 +62,16 @@ class VkApiAccessor(BaseAccessor):
             },
         )
         async with self.session.get(query_url) as response:
-            if response.status == 200:
-                json = await response.json()
-                data = json["response"]
-                self.logger.info(data)
+            if response.status != 200:
+                error_message = f"error during getting long poll server: {response}"
+                self.logger.error(error_message)
+                raise ConnectionError(error_message)
+            
+            json = await response.json()
+            data = json["response"]
+            self.logger.info(data)
 
-                return data["key"], data["server"], data["ts"]
-            else:
-                self.logger.error(f"error during getting long poll server: {response}")
+            return data["key"], data["server"], data["ts"]
 
     async def poll(self) -> list[VkApiUpdate]:
         query_url = build_query_url(
@@ -88,7 +90,7 @@ class VkApiAccessor(BaseAccessor):
             json = await response.json()
             self.logger.info(json)
 
-            if not "failed" in json:
+            if "failed" not in json:
                 self.ts = json["ts"]
 
                 try:
@@ -111,7 +113,7 @@ class VkApiAccessor(BaseAccessor):
                 # TODO: implement handling for the failures above
                 self.logger.error("error during getting updates")
 
-    async def send_message(self, peer_id: int, text: str) -> None:
+    async def send_message(self, peer_id: int, text: str) -> int:
         query_url = build_query_url(
             api_path=VK_API_PATH,
             api_method="messages.send",
@@ -126,11 +128,58 @@ class VkApiAccessor(BaseAccessor):
             json = await response.json()
             self.logger.info(json)
 
-            if not "error" in json:
+            if "error" not in json:
                 sent_message_id = int(json["response"])
                 self.logger.info(f"message sent with id: {sent_message_id}")
+                return sent_message_id
             else:
                 self.logger.error("error during message sending")
+                return None
+
+    async def send_message_with_keyboard(self, peer_id: int, text: str, keyboard: str) -> int:
+        query_url = build_query_url(
+            api_path=VK_API_PATH,
+            api_method="messages.send",
+            params={
+                "random_id": random.randint(1, 2**32),
+                "peer_id": peer_id,
+                "message": text,
+                "keyboard": keyboard,
+                "access_token": self.app.config.bot.token,
+            },
+        )
+        async with self.session.get(query_url) as response:
+            json = await response.json()
+            self.logger.info(json)
+
+            if "error" not in json:
+                sent_message_id = int(json["response"])
+                self.logger.info(f"message sent with id: {sent_message_id}")
+                return sent_message_id
+            else:
+                self.logger.error("error during message sending")
+                return None
+
+    async def update_message(self, peer_id: int, message_id: int, text: str) -> None:
+        query_url = build_query_url(
+            api_path=VK_API_PATH,
+            api_method="messages.edit",
+            params={
+                "peer_id": peer_id,
+                "message_id": message_id,
+                "message": text,
+                "access_token": self.app.config.bot.token,
+            },
+        )
+        async with self.session.get(query_url) as response:
+            json = await response.json()
+            self.logger.info(json)
+
+            if "error" not in json:
+                self.logger.info(f"message with id: {message_id} updated")
+            else:
+                self.logger.error("error during message sending")
+
 
     async def get_active_member_profiles(self, peer_id: int
     ) -> List[VkApiMemberProfile]:
@@ -146,7 +195,7 @@ class VkApiAccessor(BaseAccessor):
         async with self.session.get(query_url) as response:
             json = await response.json()
 
-            if not "error" in json:
+            if "error" not in json:
                 chat_members_info = VkApiMembersResponse.from_dict(json["response"])
                 active_chat_member_profiles = [
                     profile for profile 
