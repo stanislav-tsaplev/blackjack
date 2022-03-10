@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 COMMAND_PREFIX = '!'
 
 TIME_TO_WAIT_PLAYER_RESPONSE = 30   # sec
-DB_POLLING_FREQUENCY = 5     # sec
+DB_POLLING_FREQUENCY = 5            # sec
 
 class BotManager:
     def __init__(self, app: "Application"):
@@ -42,8 +42,8 @@ class BotManager:
             "quit": self.cut_out_player,
             "exit": self.cut_out_player,
             "выход": self.cut_out_player,
-            # "stop": self.terminate_game,
-            # "стоп": self.terminate_game,
+            "stop": self.terminate_game,
+            "стоп": self.terminate_game,
         }
 
     def get_vk_countdown_callback(self,
@@ -501,20 +501,33 @@ class BotManager:
                                     first_name=user_profile.first_name,
                                     last_name=user_profile.last_name))
 
+    async def terminate_game(self, chat_id: int, user_id: int):
+        game_session = await self.app.db_store.game_sessions \
+                                        .get_current_game_session(chat_id)
+        await self.app.db_store.game_sessions.terminate_game_session(game_session)
+        await self.app.vk_api.send_message_with_keyboard(game_session.chat_id, 
+                                                BOT_MESSAGES["game.terminated"],
+                                                BOT_KEYBOARDS["empty"])
+        for task in asyncio.all_tasks():
+            if task.get_name() == str(chat_id):
+                task.cancel()
+
     async def handle_command(self, message: VkApiMessage):
         command = message.text[1:]
         command_handler = self.command_handlers.get(command)
         if command_handler is not None:
-            asyncio.gather(command_handler(
-                chat_id=message.peer_id,
-                user_id=message.from_id,
-            ))
+            asyncio.create_task(
+                command_handler(
+                    chat_id=message.peer_id, 
+                    user_id=message.from_id),
+                name=message.peer_id    # NOT unique for different commands in one chat
+            )
 
     async def handle_new_message(self, message: VkApiMessage):
-        player_request_data = await self.app.db_store \
-            .player_dataports.get_player_request_data(
-                                    user_id=message.from_id,
-                                    chat_id=message.peer_id)
+        player_request_data = await self.app.db_store.player_dataports \
+                                                    .get_player_request_data(
+                                                        user_id=message.from_id,
+                                                        chat_id=message.peer_id)
 
         if player_request_data is None:
             # self.logger.info(f"unexcepted message from player: {message}")

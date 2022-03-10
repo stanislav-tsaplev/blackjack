@@ -12,6 +12,7 @@ BOT_MESSAGES = {
     "game.player": "⏿ [{first_name} {last_name}]",
     "game.exit": "Вы вышли из игры",
     "game.end": "⏻ Игра окончена. Всем спасибо за участие",
+    "game.terminated": "⏻ Игра прервана досрочно",
     
     "bet.started": "⏻ Делайте ваши ставки, господа!",
     "bet.request": "Делайте вашу ставку:",

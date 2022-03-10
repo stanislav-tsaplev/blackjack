@@ -23,9 +23,12 @@ class GameSessionAccessor(BaseAccessor):
         return current_game_session is not None
 
     async def get_current_game_session(self, chat_id: int) -> Optional[GameSession]:
-        game_session = await GameSession.load(
-                player_sessions=PlayerSession,
-                player_dataports=PlayerDataport
+        game_session = await GameSession.distinct(GameSession.id).load(
+                add_player_session=PlayerSession.load(
+                    player=Player.load(
+                        user_profile=UserProfile
+                    )
+                )
             ).where(
                 db.and_(
                     GameSession.chat_id == chat_id,
@@ -108,6 +111,10 @@ class GameSessionAccessor(BaseAccessor):
         ).apply()
 
     async def terminate_game_session(self, game_session: GameSession):
-        await game_session.update(
-            state=GameSessionState.TERMINATED
-        ).apply()
+        async with self.app.database.orm.transaction() as tx:
+            for player_session in game_session.player_sessions:
+                await self.app.db_store.player_sessions.return_player_bet(player_session)
+
+            await game_session.update(
+                state=GameSessionState.TERMINATED
+            ).apply()

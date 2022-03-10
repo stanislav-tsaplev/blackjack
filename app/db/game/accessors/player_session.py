@@ -114,6 +114,16 @@ class PlayerSessionAccessor(BaseAccessor):
             ).apply()
 
             return True
+    
+    async def return_player_bet(self, player_session: PlayerSession) -> None:
+        async with self.app.database.orm.transaction() as tx:
+            await player_session.player.update(
+                money=Player.money + (player_session.bet or 0)
+            ).apply()
+
+            await player_session.update(
+                state=PlayerSessionState.CUTOUT
+            ).apply()
 
     async def break_out_player(self, player_session: PlayerSession, 
                                             breakout_reason: str) -> None:
@@ -138,4 +148,6 @@ class PlayerSessionAccessor(BaseAccessor):
             ).apply()
 
     async def cut_out_player(self, player_session: PlayerSession) -> None:
-        await player_session.update(state=PlayerSessionState.CUTOUT).apply()
+        await player_session.update(
+            state=PlayerSessionState.CUTOUT
+        ).apply()
