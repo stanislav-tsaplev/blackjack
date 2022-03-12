@@ -5,12 +5,13 @@ from app.db.core.gino import gino_orm as db
 
 class PlayerSessionState(IntEnum):
     BETTING = 0
-    DEALING = 1
-    STANDING = 2
-    BLACKJACKED = 3
-    BUSTED = 4
-    PAIDOUT = 5
-    CUTOUT = 6
+    INITIAL_DEAL = 1
+    DEALING = 2
+    STANDING = 3
+    BLACKJACKED = 4
+    BUSTED = 5
+    PAIDOUT = 6
+    CUTOUT = 7
 
 
 class PlayerSession(db.Model):

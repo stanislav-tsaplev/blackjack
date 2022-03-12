@@ -11,7 +11,7 @@ from app.vk_api.models import *
 from app.db.game.models import *
 from app.bot.data_extractors import *
 from app.bot.utils.playcards import *
-from app.bot.utils.scores import *
+from app.bot.utils.player_hand import *
 from app.bot.resources import BOT_MESSAGES, BOT_KEYBOARDS
 
 if TYPE_CHECKING:
@@ -28,7 +28,7 @@ class BotManager:
         self.logger = getLogger(self.__class__.__name__)
         self.app = app
 
-        self.data_extractors: Mapping[str, Callable[ [str], Union[str, list, dict]]] = {
+        self.data_extractors: Mapping[str, Callable[ [str], Union[str, list, dict] ]] = {
             "bet_data_extractor": bet_data_extractor,
             "hit_or_stand_data_extractor": hit_or_stand_data_extractor,
         }
@@ -45,6 +45,12 @@ class BotManager:
             "stop": self.terminate_game,
             "стоп": self.terminate_game,
         }
+
+    async def restore_opened_games(self, *args, **kwargs):
+        opened_game_sessions = await self.app.db_store.game_sessions \
+                                                .get_all_opened_game_sessions()
+        for game_session in opened_game_sessions:
+            asyncio.create_task(self.restore_game(game_session))
 
     def get_vk_countdown_callback(self,
         chat_id: int,
@@ -97,6 +103,20 @@ class BotManager:
         await player_response_task
         return player_response_task.result()
 
+    async def restore_game(self, game_session: GameSession):
+        game_phases = [None,
+            self.betting,
+            self.initial_deal,
+            self.dealing,
+            self.dealer_game,
+            self.paying_out,
+        ]
+
+        await self.app.vk_api.send_message(game_session.chat_id, 
+                                        BOT_MESSAGES["game.restored"])
+        for game_phase in game_phases[game_session.state.value: ]:
+            await game_phase(game_session)
+
     async def launch_game(self, chat_id: int, user_id: int):
         if await self.check_for_already_launched_game(chat_id):
             return
@@ -140,21 +160,26 @@ class BotManager:
             await self.app.vk_api.send_message(chat_id, 
                                         BOT_MESSAGES["game.player"].format(
                                             first_name=user_profile.first_name,
-                                            last_name=user_profile.last_name
-                                        ))
+                                            last_name=user_profile.last_name))
         return game_session
 
     async def betting(self, game_session: GameSession):
+        await self.app.db_store.game_sessions.set_game_session_state(
+                                                game_session, 
+                                                GameSessionState.BETTING)
         await self.app.vk_api.send_message(game_session.chat_id, BOT_MESSAGES["bet.started"])
         for player_session in game_session.player_sessions:
-            user_profile = player_session.player.user_profile
+            if player_session.state != PlayerSessionState.BETTING:
+                break
 
+            user_profile = player_session.player.user_profile
             await self.app.db_store.player_dataports.put_player_request_data(
-                                                user_id=user_profile.vk_id,
-                                                chat_id=game_session.chat_id, 
-                                                request_data={
-                                                    "data_extractor": "bet_data_extractor"
-                                                })
+                                                        user_id=user_profile.vk_id,
+                                                        chat_id=game_session.chat_id, 
+                                                        request_data={
+                                                            "data_extractor": 
+                                                                "bet_data_extractor"
+                                                        })
 
             bet_request_text_template = Template(
                 f'{BOT_MESSAGES["game.player"]} '
@@ -208,17 +233,20 @@ class BotManager:
                                                 BOT_MESSAGES["bet.completed"])
 
     async def initial_deal(self, game_session: GameSession):
+        await self.app.db_store.game_sessions.set_game_session_state(
+                                                game_session, 
+                                                GameSessionState.INITIAL_DEAL)
         dealing_players = await self.app.db_store.player_sessions \
                                             .get_dealing_players(game_session)
         
         for player_session in dealing_players:
-            user_profile = player_session.player.user_profile
+            if player_session.state != PlayerSessionState.INITIAL_DEAL:
+                break
 
             card1 = get_random_card()
             card2 = get_random_card()
-            await self.app.db_store.card_deals.add_cards(player_session, 
+            await self.app.db_store.card_deals.add_initial_cards(player_session, 
                                                             cards=(card1, card2))
-
             user_profile = player_session.player.user_profile
             await self.app.vk_api.send_message(game_session.chat_id,
                                                 f'{BOT_MESSAGES["game.player"]} '
@@ -229,8 +257,8 @@ class BotManager:
             
         card1 = get_random_card()
         card2 = get_random_card()
-        await self.app.db_store.card_deals.add_cards(game_session.dealer_session, 
-                                                            cards=(card1, card2))
+        await self.app.db_store.card_deals.add_initial_cards(game_session.dealer_session, 
+                                                                    cards=(card1, card2))
         await self.app.vk_api.send_message(game_session.chat_id,
                                             f'{BOT_MESSAGES["deal.initial.dealer"]} '
                                             f'{card1} '
@@ -238,6 +266,9 @@ class BotManager:
         
 
     async def dealing(self, game_session: GameSession):
+        await self.app.db_store.game_sessions.set_game_session_state(
+                                                game_session, 
+                                                GameSessionState.DEALING)
         await self.app.vk_api.send_message_with_keyboard(game_session.chat_id,
                                             BOT_MESSAGES["deal.started"],
                                             BOT_KEYBOARDS["hit_or_stand"])
@@ -291,10 +322,7 @@ class BotManager:
                         card = get_random_card()
                         hand.take(card)
 
-                        await self.app.db_store.card_deals.add_cards(
-                                                            player_session, 
-                                                            cards=(card,))
-
+                        await self.app.db_store.card_deals.add_card(player_session, card)
                         await self.app.vk_api.send_message(game_session.chat_id,
                                                 f'{BOT_MESSAGES["game.player"]} '
                                                 f'{BOT_MESSAGES["deal.new_card"]} '
@@ -364,6 +392,9 @@ class BotManager:
                                                 BOT_KEYBOARDS["empty"])
 
     async def dealer_game(self, game_session: GameSession):
+        await self.app.db_store.game_sessions.set_game_session_state(
+                                                game_session, 
+                                                GameSessionState.DEALER_GAME)
         await self.app.vk_api.send_message(game_session.chat_id, BOT_MESSAGES["dealer.start"])
         await asyncio.sleep(2)
 
@@ -382,7 +413,7 @@ class BotManager:
 
             card = get_random_card()
             dealer_hand.take(card)
-            await self.app.db_store.card_deals.add_cards(dealer_session, (card,))
+            await self.app.db_store.card_deals.add_card(dealer_session, card)
             await self.app.vk_api.send_message(game_session.chat_id,
                                             f'{BOT_MESSAGES["dealer.new_card"]} {card}')
             await asyncio.sleep(1)
@@ -410,6 +441,9 @@ class BotManager:
         await asyncio.sleep(2)
 
     async def paying_out(self, game_session: GameSession):
+        await self.app.db_store.game_sessions.set_game_session_state(
+                                                game_session, 
+                                                GameSessionState.PAYING_OUT)
         dealer_session = game_session.dealer_session
         dealer_hand = await self.app.db_store.card_deals \
                                             .get_player_hand(dealer_session)
@@ -525,7 +559,7 @@ class BotManager:
                 task.cancel()
 
     async def handle_command(self, message: VkApiMessage):
-        command = message.text[1:]
+        command = message.text.removeprefix(COMMAND_PREFIX).strip()
         command_handler = self.command_handlers.get(command)
         if command_handler is not None:
             asyncio.create_task(

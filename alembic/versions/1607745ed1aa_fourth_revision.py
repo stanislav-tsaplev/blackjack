@@ -1,8 +1,8 @@
 """fourth revision
 
-Revision ID: 762815d31418
+Revision ID: 1607745ed1aa
 Revises: 
-Create Date: 2022-03-12 00:32:08.400482
+Create Date: 2022-03-12 22:19:02.138251
 
 """
 from alembic import op
@@ -14,7 +14,7 @@ from gino import Gino
 gino_orm = Gino()
 
 # revision identifiers, used by Alembic.
-revision = '762815d31418'
+revision = '1607745ed1aa'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -47,7 +47,7 @@ def upgrade():
     sa.Column('chat_id', sa.Integer(), nullable=True),
     sa.Column('started_at', sa.DateTime(), nullable=True),
     sa.Column('closed_at', sa.DateTime(), nullable=True),
-    sa.Column('state', gino_orm.Enum('OPENED', 'CLOSED', 'TERMINATED', name='gamesessionstate'), nullable=False),
+    sa.Column('state', gino_orm.Enum('OPENED', 'BETTING', 'INITIAL_DEAL', 'DEALING', 'DEALER_GAME', 'PAYING_OUT', 'CLOSED', 'TERMINATED', name='gamesessionstate'), nullable=False),
     sa.ForeignKeyConstraint(['chat_id'], ['game_chats.chat_id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id')
     )
@@ -68,7 +68,7 @@ def upgrade():
     sa.Column('timestamp', sa.BigInteger(), nullable=True),
     sa.Column('bet', sa.Integer(), nullable=True),
     sa.Column('payout_ratio', sa.Integer(), nullable=True),
-    sa.Column('state', gino_orm.Enum('BETTING', 'DEALING', 'STANDING', 'BLACKJACKED', 'BUSTED', 'PAIDOUT', 'CUTOUT', name='playersessionstate'), nullable=False),
+    sa.Column('state', gino_orm.Enum('BETTING', 'INITIAL_DEAL', 'DEALING', 'STANDING', 'BLACKJACKED', 'BUSTED', 'PAIDOUT', 'CUTOUT', name='playersessionstate'), nullable=False),
     sa.ForeignKeyConstraint(['game_session_id'], ['game_sessions.id'], ondelete='CASCADE'),
     sa.ForeignKeyConstraint(['player_id'], ['players.id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id')

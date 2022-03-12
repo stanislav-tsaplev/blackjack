@@ -6,8 +6,13 @@ from app.db.core.gino import gino_orm as db
 
 class GameSessionState(IntEnum):
     OPENED = 0
-    CLOSED = 1
-    TERMINATED = 2
+    BETTING = 1
+    INITIAL_DEAL = 2
+    DEALING = 3
+    DEALER_GAME = 4
+    PAYING_OUT = 5
+    CLOSED = 6
+    TERMINATED = 7
 
 
 class GameSession(db.Model):

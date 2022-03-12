@@ -25,7 +25,10 @@ class PlayerDataportAccessor(BaseAccessor):
         player_session = await self.app.db_store \
             .player_sessions.get_current_player_session(user_id, chat_id)
 
-        return json.loads(player_session.player_dataport.request_data)
+        request_data = player_session.player_dataport.request_data
+        if request_data is None:
+            return None    
+        return json.loads(request_data)
         
     async def put_player_response_data(self, user_id: int, chat_id: int,
                                         response_data: Union[str, list, dict]) -> None:

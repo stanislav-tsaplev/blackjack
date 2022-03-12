@@ -14,17 +14,34 @@ class GameSessionAccessor(BaseAccessor):
     async def connect(self, app: "Application"):
         await super().connect(app)
 
-    async def has_current_game_session(self, chat_id: int) -> Optional[GameSession]:
+    async def get_all_opened_game_sessions(self) -> List[GameSession]:
+        return await GameSession.distinct(GameSession.id).load(
+                add_player_session=PlayerSession.load(
+                    player=Player.load(
+                        user_profile=UserProfile
+                    )
+                )
+            ).where(
+                GameSession.state.notin_([
+                    GameSessionState.CLOSED,
+                    GameSessionState.TERMINATED,
+                ])
+            ).gino.all()
+
+    async def has_current_game_session(self, chat_id: int) -> bool:
         current_game_session = await GameSession.query.where(
             db.and_(
                 GameSession.chat_id == chat_id,
-                GameSession.state == GameSessionState.OPENED
+                GameSession.state.notin_([
+                    GameSessionState.CLOSED, 
+                    GameSessionState.TERMINATED
+                ])
             )
         ).gino.one_or_none()
         return current_game_session is not None
 
     async def get_current_game_session(self, chat_id: int) -> Optional[GameSession]:
-        game_session = await GameSession.distinct(GameSession.id).load(
+        return await GameSession.distinct(GameSession.id).load(
                 add_player_session=PlayerSession.load(
                     player=Player.load(
                         user_profile=UserProfile
@@ -33,10 +50,12 @@ class GameSessionAccessor(BaseAccessor):
             ).where(
                 db.and_(
                     GameSession.chat_id == chat_id,
-                    GameSession.state == GameSessionState.OPENED
+                    GameSession.state.notin_([
+                        GameSessionState.CLOSED,
+                        GameSessionState.TERMINATED,
+                    ])
                 )
             ).gino.one_or_none()
-        return game_session
 
     async def create_game_session(self, chat_id: int, 
                                         user_profiles: List[UserProfile]) -> GameSession:
@@ -136,6 +155,13 @@ class GameSessionAccessor(BaseAccessor):
         ).where(
             GameSession.id == game_session.id
         ).gino.one()
+
+    async def set_game_session_state(self, 
+            game_session: GameSession, 
+            state: GameSessionState):
+        await game_session.update(
+            state=state
+        ).apply()
 
     async def close_game_session(self, game_session: GameSession):
         await game_session.update(
