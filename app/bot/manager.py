@@ -1,5 +1,5 @@
 from typing import (
-    Optional, Union, Callable, Mapping, 
+    Optional, Union, Callable, Coroutine, Mapping, 
     TYPE_CHECKING
 )
 from logging import getLogger
@@ -32,7 +32,7 @@ class BotManager:
             "bet_data_extractor": bet_data_extractor,
             "hit_or_stand_data_extractor": hit_or_stand_data_extractor,
         }
-        self.command_handlers: Mapping[str, Callable[[int, int], None]] = {
+        self.command_handlers: Mapping[str, Coroutine[int, int, None]] = {
             "game": self.launch_game,
             "игра": self.launch_game,
             "hand": self.show_player_hand,
