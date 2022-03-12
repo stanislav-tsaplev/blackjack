@@ -5,13 +5,12 @@ from app.db.core.gino import gino_orm as db
 
 class PlayerSessionState(IntEnum):
     BETTING = 0
-    WAITING = 1
-    DEALING = 2
-    STANDING = 3
-    BLACKJACKED = 4
-    BUSTED = 5
-    PAIDOUT = 6
-    CUTOUT = 7
+    DEALING = 1
+    STANDING = 2
+    BLACKJACKED = 3
+    BUSTED = 4
+    PAIDOUT = 5
+    CUTOUT = 6
 
 
 class PlayerSession(db.Model):
@@ -22,11 +21,12 @@ class PlayerSession(db.Model):
         db.ForeignKey("game_sessions.id", ondelete="CASCADE"))
     player_id = db.Column(db.Integer,
         db.ForeignKey("players.id", ondelete="CASCADE"))
+    timestamp = db.Column(db.BigInteger, default=0)
+
     bet = db.Column(db.Integer, nullable=True)
     payout_ratio = db.Column(db.Integer, nullable=True)
     state = db.Column(db.Enum(PlayerSessionState), 
-        nullable=False, default=PlayerSessionState.BETTING.value
-    )
+        nullable=False, default=PlayerSessionState.BETTING.value)
 
     secondary_key = db.Index("player_sessions.skey", 
                                 "player_id", "game_session_id", unique=True)

@@ -1,8 +1,8 @@
-"""third revision
+"""fourth revision
 
-Revision ID: ff7d32078e40
+Revision ID: 762815d31418
 Revises: 
-Create Date: 2022-03-09 16:10:43.390363
+Create Date: 2022-03-12 00:32:08.400482
 
 """
 from alembic import op
@@ -14,7 +14,7 @@ from gino import Gino
 gino_orm = Gino()
 
 # revision identifiers, used by Alembic.
-revision = 'ff7d32078e40'
+revision = '762815d31418'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -65,9 +65,10 @@ def upgrade():
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.Column('game_session_id', sa.Integer(), nullable=True),
     sa.Column('player_id', sa.Integer(), nullable=True),
+    sa.Column('timestamp', sa.BigInteger(), nullable=True),
     sa.Column('bet', sa.Integer(), nullable=True),
     sa.Column('payout_ratio', sa.Integer(), nullable=True),
-    sa.Column('state', gino_orm.Enum('BETTING', 'WAITING', 'DEALING', 'STANDING', 'BLACKJACKED', 'BUSTED', 'PAIDOUT', 'CUTOUT', name='playersessionstate'), nullable=False),
+    sa.Column('state', gino_orm.Enum('BETTING', 'DEALING', 'STANDING', 'BLACKJACKED', 'BUSTED', 'PAIDOUT', 'CUTOUT', name='playersessionstate'), nullable=False),
     sa.ForeignKeyConstraint(['game_session_id'], ['game_sessions.id'], ondelete='CASCADE'),
     sa.ForeignKeyConstraint(['player_id'], ['players.id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id')

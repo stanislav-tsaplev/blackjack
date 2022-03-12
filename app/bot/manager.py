@@ -208,10 +208,10 @@ class BotManager:
                                                 BOT_MESSAGES["bet.completed"])
 
     async def initial_deal(self, game_session: GameSession):
-        waiting_players = await self.app.db_store.player_sessions \
-                                            .get_waiting_players(game_session)
+        dealing_players = await self.app.db_store.player_sessions \
+                                            .get_dealing_players(game_session)
         
-        for player_session in waiting_players:
+        for player_session in dealing_players:
             user_profile = player_session.player.user_profile
 
             card1 = get_random_card()
@@ -222,20 +222,32 @@ class BotManager:
             user_profile = player_session.player.user_profile
             await self.app.vk_api.send_message(game_session.chat_id,
                                                 f'{BOT_MESSAGES["game.player"]} '
-                                                f'{BOT_MESSAGES["deal.initial"]} '
+                                                f'{BOT_MESSAGES["deal.initial.player"]} '
                                                 f'{card1} {card2}'.format(
                                                     first_name=user_profile.first_name,
-                                                    last_name=user_profile.last_name)
-                                                )
+                                                    last_name=user_profile.last_name))
+            
+        card1 = get_random_card()
+        card2 = get_random_card()
+        await self.app.db_store.card_deals.add_cards(game_session.dealer_session, 
+                                                            cards=(card1, card2))
+        await self.app.vk_api.send_message(game_session.chat_id,
+                                            f'{BOT_MESSAGES["deal.initial.dealer"]} '
+                                            f'{card1} '
+                                            f'{BOT_MESSAGES["deal.hidden_card"]}')
+        
 
     async def dealing(self, game_session: GameSession):
-        waiting_players = await self.app.db_store.player_sessions \
-                                        .get_waiting_players(game_session)
         await self.app.vk_api.send_message_with_keyboard(game_session.chat_id,
                                             BOT_MESSAGES["deal.started"],
                                             BOT_KEYBOARDS["hit_or_stand"])
-        while waiting_players:
-            for player_session in waiting_players:
+        while True:
+            dealing_players = await self.app.db_store.player_sessions \
+                                            .get_dealing_players(game_session)
+            if not dealing_players:
+                break
+
+            for player_session in dealing_players:
                 user_profile = player_session.player.user_profile
                 await self.app.db_store.player_dataports.put_player_request_data(
                                         user_id=user_profile.vk_id,
@@ -326,8 +338,9 @@ class BotManager:
                                     first_name=user_profile.first_name,
                                     last_name=user_profile.last_name)
                                 )
-
-                else:   # if player missed the time, we treat them as choosed to stand
+                # if player missed the time, 
+                # we treat them as if they choosed to stand
+                else:
                     await self.app.db_store.player_sessions \
                                                     .break_out_player(
                                                         player_session,
@@ -336,33 +349,30 @@ class BotManager:
                                 f'{BOT_MESSAGES["game.player"]} '
                                 f'{BOT_MESSAGES["hit_or_stand.stand_accepted"]}'.format(
                                     first_name=user_profile.first_name,
-                                    last_name=user_profile.last_name)
-                                )
-                
+                                    last_name=user_profile.last_name))
+
                 await self.app.db_store.player_dataports \
                                             .clear_player_dataport(
                                                 user_id=user_profile.vk_id,
                                                 chat_id=game_session.chat_id)
+                await self.app.db_store.player_sessions.update_timestamp(player_session)
                 await self.app.vk_api.send_message(game_session.chat_id,
                                             BOT_MESSAGES["deal.next"])
-            waiting_players = await self.app.db_store.player_sessions \
-                                            .get_waiting_players(game_session)
+        
         await self.app.vk_api.send_message_with_keyboard(game_session.chat_id,
                                                 BOT_MESSAGES["deal.completed"],
                                                 BOT_KEYBOARDS["empty"])
 
     async def dealer_game(self, game_session: GameSession):
         await self.app.vk_api.send_message(game_session.chat_id, BOT_MESSAGES["dealer.start"])
-        dealer_session = await self.app.db_store.player_sessions \
-                                                    .create_dealer_session(game_session)
         await asyncio.sleep(2)
 
-        # since dealing card is random, there is no difference when it is occured
-        card = get_random_card()
-        dealer_hand = PlayerHand([card])
-        await self.app.db_store.card_deals.add_cards(dealer_session, (card,))
+        dealer_session = game_session.dealer_session
+        dealer_hand = await self.app.db_store.card_deals.get_player_hand(dealer_session)
+
         await self.app.vk_api.send_message(game_session.chat_id,
-                                            f'{BOT_MESSAGES["dealer.initial"]} {card}')
+                                            f'{BOT_MESSAGES["dealer.initial"]} '
+                                            f'{dealer_hand}')
         await asyncio.sleep(1)
 
         while dealer_hand.score < 17:
@@ -379,13 +389,15 @@ class BotManager:
             
             if dealer_hand.is_bust():
                 await self.app.vk_api.send_message(game_session.chat_id,
-                                            f'{BOT_MESSAGES["dealer.hand"]} {dealer_hand}')
+                                                    f'{BOT_MESSAGES["dealer.hand"]} '
+                                                    f'{dealer_hand}')
                 await self.app.vk_api.send_message(game_session.chat_id,
                                                         BOT_MESSAGES["dealer.bust"])
                 break
             if dealer_hand.is_blackjack():
                 await self.app.vk_api.send_message(game_session.chat_id,
-                                            f'{BOT_MESSAGES["dealer.hand"]} {dealer_hand}')
+                                                    f'{BOT_MESSAGES["dealer.hand"]} '
+                                                    f'{dealer_hand}')
                 await self.app.vk_api.send_message(game_session.chat_id,
                                                         BOT_MESSAGES["dealer.blackjack"])
                 break
@@ -393,12 +405,12 @@ class BotManager:
             await self.app.vk_api.send_message(game_session.chat_id,
                                                         BOT_MESSAGES["dealer.stand"])
             await self.app.vk_api.send_message(game_session.chat_id,
-                                            f'{BOT_MESSAGES["dealer.hand"]} {dealer_hand}')
+                                                    f'{BOT_MESSAGES["dealer.hand"]} '
+                                                    f'{dealer_hand}')
         await asyncio.sleep(2)
 
     async def paying_out(self, game_session: GameSession):
-        dealer_session = await self.app.db_store.player_sessions \
-                                            .get_dealer_session(game_session.chat_id)
+        dealer_session = game_session.dealer_session
         dealer_hand = await self.app.db_store.card_deals \
                                             .get_player_hand(dealer_session)
 

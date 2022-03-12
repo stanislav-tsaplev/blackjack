@@ -21,7 +21,9 @@ BOT_MESSAGES = {
     "bet.discarded": "К сожалению, вы не участвуете в игре",
     "bet.completed": "⏻ Ставки сделаны. Начинаем игру",
     
-    "deal.initial": "Ваши карты:",
+    "deal.initial.player": "Ваши карты:",
+    "deal.initial.dealer": "Мои карты:",
+    "deal.hidden_card": "⛌⛌",
     "deal.started": "⏻ Начинаю раздачу карт",
     "deal.new_card": "Ваша карта:",
     "deal.hand": "У вас на руке:",

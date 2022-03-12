@@ -51,5 +51,6 @@ class PlayerDataportAccessor(BaseAccessor):
             .player_sessions.get_current_player_session(user_id, chat_id)
 
         await player_session.player_dataport.update(
-            request_data=None, response_data=None
+            request_data=None, 
+            response_data=None,
         ).apply()
