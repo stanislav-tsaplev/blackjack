@@ -92,26 +92,40 @@ class VkApiAccessor(BaseAccessor):
 
             if "failed" not in json:
                 self.ts = json["ts"]
-
                 try:
                     json_updates = json.get("updates", [])
-                    return [VkApiUpdate.from_dict(json_update)
-                                for json_update in json_updates]
+                    return [
+                        VkApiUpdate.from_dict(json_update)
+                        for json_update in json_updates
+                    ]
                 except Exception as e:
                     self.logger.error("exception during update parsing", exc_info=e)
             else:
-                # "{"failed":1,"ts":$new_ts}— история событий устарела или была частично утеряна, 
-                #  приложение может получать события далее, 
-                #  используя новое значение ts из ответа.
+                self.logger.error("error during getting updates", exc_info=json)
+                error_code = json["failed"]
+                
+                # "{"failed":1,"ts":$new_ts} — 
+                # история событий устарела или была частично утеряна, 
+                # приложение может получать события далее, 
+                # используя новое значение ts из ответа.
+                if error_code == 1:
+                    self.ts = json["ts"]
 
                 # {"failed":2} — истекло время действия ключа, 
                 #  нужно заново получить key методом messages.getLongPollServer.
-
                 # {"failed":3} — информация о пользователе утрачена, 
                 #  нужно запросить новые key и ts методом messages.getLongPollServer.
-
-                # TODO: implement handling for the failures above
-                self.logger.error("error during getting updates")
+                elif error_code in (2, 3):
+                    try:
+                        self.key, self.server, self.ts = await self._get_long_poll_server()
+                    except Exception as e:
+                        self.logger.error(
+                            "exception during long poll service getting", 
+                            exc_info=e
+                        )
+                        await self.session.close()
+                
+                return self.poll()
 
     async def send_message(self, peer_id: int, text: str) -> int:
         query_url = build_query_url(
