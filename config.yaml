@@ -8,8 +8,8 @@ bot:
   token: 056ce685c487df9ecd165652244c64c93c37b27ce74345615092095c8b701ec2f2d811c7039af465cb2de
   group_id: 210582920
 db:
-  host: 0.0.0.0
+  host: ec2-63-34-223-144.eu-west-1.compute.amazonaws.com
   port: 5432
-  dbname: blackjack
-  user: postgres
-  password: postgres
+  dbname: d46qu9qi05q72g
+  user: rfnrytsppgcqbn
+  password: 5a09e4a3641acdba1c054053025058639876192c996e92af0e30f92b92c9fc24
