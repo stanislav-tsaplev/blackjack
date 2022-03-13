@@ -10,6 +10,6 @@ bot:
 db:
   host: ec2-63-34-223-144.eu-west-1.compute.amazonaws.com
   port: 5432
-  dbname: d46qu9qi05q72g
-  user: rfnrytsppgcqbn
-  password: 5a09e4a3641acdba1c054053025058639876192c996e92af0e30f92b92c9fc24
+  dbname: deg71udhl2j9t6
+  user: kiwgvrvfxtflas
+  password: 518dde3e150b48f3cc744ff17e5ca72787326c186a43124714b4ee8b7d2a77bb
