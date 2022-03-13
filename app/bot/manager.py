@@ -8,6 +8,7 @@ from string import Template
 import asyncio
 
 from app.vk_api.models import *
+from app.vk_api.utils import is_sent_from_chat
 from app.db.game.models import *
 from app.bot.data_extractors import *
 from app.bot.utils.playcards import *
@@ -602,7 +603,8 @@ class BotManager:
         for update in updates:
             if update.type == "message_new":
                 vk_api_message = update.object.message
-                if vk_api_message.text.startswith(COMMAND_PREFIX):
-                    await self.handle_command(vk_api_message)
-                else:
-                    await self.handle_new_message(vk_api_message)
+                if is_sent_from_chat(vk_api_message):
+                    if vk_api_message.text.startswith(COMMAND_PREFIX):
+                        await self.handle_command(vk_api_message)
+                    else:
+                            await self.handle_new_message(vk_api_message)

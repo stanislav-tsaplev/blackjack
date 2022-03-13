@@ -1,5 +1,7 @@
 import re
 
+from app.vk_api.models import VkApiMessage
+
 
 def build_query_url(api_path: str, api_method: str, params: dict) -> str:
     params.setdefault("v", "5.131")
@@ -13,3 +15,6 @@ def make_regex_for_query_url(query_url: str):
         query_url.replace(".", r"\.").replace("?", r"\?") \
                     + r"(\?([^&=]+=[^&=]+)(&[^&=]+=[^&=]+))?"
     )
+
+def is_sent_from_chat(vk_api_message: VkApiMessage) -> bool:
+    return vk_api_message.peer_id > 2_000_000_000
