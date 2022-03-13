@@ -266,6 +266,19 @@ class BotManager:
                                                 f'{card1} {card2}'.format(
                                                     first_name=user_profile.first_name,
                                                     last_name=user_profile.last_name))
+            hand = PlayerHand((card1, card2))
+            if hand.is_blackjack():
+                await self.app.db_store.player_sessions \
+                                        .break_out_player(
+                                            player_session,
+                                            breakout_reason="blackjack")
+                await self.app.vk_api.send_message(game_session.chat_id,
+                                f'{BOT_MESSAGES["game.player"]} '
+                                f'{BOT_MESSAGES["deal.blackjack"]}'.format(
+                                    first_name=user_profile.first_name,
+                                    last_name=user_profile.last_name
+                                )
+                )
             
         card1 = get_random_card()
         card2 = get_random_card()
@@ -306,7 +319,7 @@ class BotManager:
                                                 f'{hand}'.format(
                                                     first_name=user_profile.first_name,
                                                     last_name=user_profile.last_name)
-                                                )
+                                                )                                   
 
                 hit_or_stand_request_text_template = Template(
                     f'{BOT_MESSAGES["game.player"]} '
@@ -412,11 +425,17 @@ class BotManager:
 
         dealer_session = game_session.dealer_session
         dealer_hand = await self.app.db_store.card_deals.get_player_hand(dealer_session)
-
         await self.app.vk_api.send_message(game_session.chat_id,
                                             f'{BOT_MESSAGES["dealer.initial"]} '
                                             f'{dealer_hand}')
         await asyncio.sleep(1)
+
+        if dealer_hand.is_blackjack():
+            await self.app.vk_api.send_message(game_session.chat_id,
+                                                f'{BOT_MESSAGES["dealer.hand"]} '
+                                                f'{dealer_hand}')
+            await self.app.vk_api.send_message(game_session.chat_id,
+                                                    BOT_MESSAGES["dealer.blackjack"])
 
         while dealer_hand.score < 17:
             await self.app.vk_api.send_message(game_session.chat_id, 
