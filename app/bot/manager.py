@@ -116,6 +116,7 @@ class BotManager:
             self.dealing,
             self.dealer_game,
             self.paying_out,
+            self.end_game
         ]
 
         await self.app.vk_api.send_message(game_session.chat_id, 
@@ -134,6 +135,7 @@ class BotManager:
         await self.dealing(game_session)
         await self.dealer_game(game_session)
         await self.paying_out(game_session)
+        await self.end_game(game_session)
 
     async def check_for_already_launched_game(self, chat_id: int) -> bool:
         current_game_session_exists = await self.app.db_store.game_sessions \
@@ -512,6 +514,7 @@ class BotManager:
             await self.app.db_store.player_sessions \
                                     .pay_out_player(player_session, player_payout_ratio)
 
+    async def end_game(self, game_session: GameSession):
         await self.app.db_store.game_sessions.close_game_session(game_session)
         await self.app.vk_api.send_message(game_session.chat_id, BOT_MESSAGES["game.end"])
 
