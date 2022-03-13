@@ -5,6 +5,8 @@ BOT_MESSAGES = {
     "player_info.money": "У вас в кошельке:",
     "player_info.hand": "У вас на руке:",
     "player_info.out_of_game": "⏻ Эта информация доступна только в ходе игры",
+    "player_info.top_header": "⏻ Самые успешные игроки:",
+    "player_info.top_item": "⏿ [{first_name} {last_name}]@[{chat_name}] ${money}",
     
     "game.restored": "⏻ Игра восстановлена после перезапуска сервера",
     "game.already_started": "⏻ Игра уже идет. Чтобы начать новую игру, завершите текущую",

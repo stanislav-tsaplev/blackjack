@@ -24,6 +24,8 @@ COMMAND_PREFIX = '!'
 TIME_TO_WAIT_PLAYER_RESPONSE = 30   # sec
 DB_POLLING_FREQUENCY = 5            # sec
 
+PLAYERS_TOP = 3
+
 class BotManager:
     def __init__(self, app: "Application"):
         self.logger = getLogger(self.__class__.__name__)
@@ -40,6 +42,8 @@ class BotManager:
             "рука": self.show_player_hand,
             "money": self.show_player_money,
             "сумма": self.show_player_money,
+            "top": self.show_players_top,
+            "топ": self.show_players_top,
             "quit": self.cut_out_player,
             "exit": self.cut_out_player,
             "выход": self.cut_out_player,
@@ -105,7 +109,8 @@ class BotManager:
         return player_response_task.result()
 
     async def restore_game(self, game_session: GameSession):
-        game_phases = [None,
+        game_phases = [
+            self.betting,       # for GameSessionState.OPENED
             self.betting,
             self.initial_deal,
             self.dealing,
@@ -156,12 +161,16 @@ class BotManager:
         await self.app.vk_api.send_message(chat_id,
                                         BOT_MESSAGES["game.players_list_header"])
         
-        for player_session in game_session.player_sessions:
-            user_profile = player_session.player.user_profile
-            await self.app.vk_api.send_message(chat_id, 
-                                        BOT_MESSAGES["game.player"].format(
-                                            first_name=user_profile.first_name,
-                                            last_name=user_profile.last_name))
+        await self.app.vk_api.send_message(
+            chat_id, 
+            "<br>".join(
+                BOT_MESSAGES["game.player"].format(
+                    first_name=player_session.player.user_profile.first_name,
+                    last_name=player_session.player.user_profile.last_name
+                )
+                for player_session in game_session.player_sessions
+            )
+        )
         return game_session
 
     async def betting(self, game_session: GameSession):
@@ -533,6 +542,26 @@ class BotManager:
                                 f'{player.money}'.format(
                                     first_name=player.user_profile.first_name,
                                     last_name=player.user_profile.last_name))
+
+    async def show_players_top(self, chat_id: int, user_id: int):
+        players_top = await self.app.db_store.players \
+                                .get_successful_players_list(PLAYERS_TOP)
+        await self.app.vk_api.send_message(
+            chat_id, 
+            BOT_MESSAGES["player_info.top_header"]
+        )                                             
+        await self.app.vk_api.send_message(
+            chat_id, 
+            "<br>".join(
+                BOT_MESSAGES["player_info.top_item"].format(
+                    first_name=player.user_profile.first_name,
+                    last_name=player.user_profile.last_name,
+                    chat_name=player.game_chat.name,
+                    money=player.money
+                )
+                for player in players_top
+            )
+        )
 
     async def cut_out_player(self, chat_id: int, user_id: int):
         player_session = await self.app.db_store.player_sessions \

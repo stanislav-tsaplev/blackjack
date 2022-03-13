@@ -13,14 +13,3 @@ class Player(db.Model):
 
     secondary_key = db.Index("players_skey", "vk_id", "chat_id", unique=True)
     
-    # def __init__(self, **kwargs):
-    #     super().__init__(**kwargs)
-    #     self._player_sessions = list()
-
-    # @property
-    # def player_sessions(self):
-    #     return self._player_sessions
-
-    # @player_sessions.setter
-    # def add_player_session(self, player_session):
-    #     self._player_sessions.append(player_session)
