@@ -128,6 +128,8 @@ class PlayerSessionAccessor(BaseAccessor):
                 timestamp=time_ns()
             ).apply()
 
+            await player_session.player_dataport.delete()
+
     async def cut_out_player(self, player_session: PlayerSession) -> None:
         await player_session.update(
             state=PlayerSessionState.CUTOUT,
