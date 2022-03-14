@@ -109,7 +109,7 @@ class VkApiAccessor(BaseAccessor):
                         self.logger.error("exception during update parsing", exc_info=e)
                 else:
                     self.logger.error("error during getting updates", exc_info=json)
-                    error_code = json["failed"]
+                    error_code = int(json["failed"])
                     
                     # "{"failed":1,"ts":$new_ts} — 
                     # история событий устарела или была частично утеряна, 
@@ -135,7 +135,7 @@ class VkApiAccessor(BaseAccessor):
                     return self.poll()
         
         except ClientConnectionError as e:
-            self.logger.error(exc_info=e)
+            self.logger.error("connection error during getting updates", exc_info=e)
             self.session = ClientSession(connector=TCPConnector(verify_ssl=False))
             return self.poll()
 

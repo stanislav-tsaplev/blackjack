@@ -1,10 +1,10 @@
-from typing import List
+from typing import Iterable
 
 from .playcards import Card, CardRank
 
 
 class PlayerHand:
-    def __init__(self, cards: List[Card]):
+    def __init__(self, cards: Iterable[Card]):
         self.cards = cards
         self._pre_score = sum(min(card.rank.value, 10) for card in self.cards)
         self._plus_score = 10 if (
