@@ -76,7 +76,7 @@ class VkApiAccessor(BaseAccessor):
         except ClientConnectionError as e:
             self.logger.error(exc_info=e)
             self.session = ClientSession(connector=TCPConnector(verify_ssl=False))
-            self._get_long_poll_server()
+            await self._get_long_poll_server()
 
 
     async def poll(self) -> list[VkApiUpdate]:
@@ -132,12 +132,12 @@ class VkApiAccessor(BaseAccessor):
                             )
                             await self.session.close()
                                                 
-                    return self.poll()
+                    return await self.poll()
         
         except ClientConnectionError as e:
             self.logger.error("connection error during getting updates", exc_info=e)
             self.session = ClientSession(connector=TCPConnector(verify_ssl=False))
-            return self.poll()
+            return await self.poll()
 
     async def send_message(self, peer_id: int, text: str) -> int:
         query_url = build_query_url(
@@ -165,7 +165,7 @@ class VkApiAccessor(BaseAccessor):
         except ClientConnectionError as e:
             self.logger.error(exc_info=e)
             self.session = ClientSession(connector=TCPConnector(verify_ssl=False))
-            self.send_message(peer_id, text)
+            await self.send_message(peer_id, text)
 
     async def send_message_with_keyboard(self, peer_id: int, text: str, keyboard: str) -> int:
         query_url = build_query_url(
@@ -194,7 +194,7 @@ class VkApiAccessor(BaseAccessor):
         except ClientConnectionError as e:
             self.logger.error(exc_info=e)
             self.session = ClientSession(connector=TCPConnector(verify_ssl=False))
-            self.send_message_with_keyboard(peer_id, text, keyboard)
+            await self.send_message_with_keyboard(peer_id, text, keyboard)
 
     async def update_message(self, peer_id: int, message_id: int, text: str) -> None:
         query_url = build_query_url(
@@ -219,7 +219,7 @@ class VkApiAccessor(BaseAccessor):
         except ClientConnectionError as e:
             self.logger.error(exc_info=e)
             self.session = ClientSession(connector=TCPConnector(verify_ssl=False))
-            self.update_message(peer_id, message_id, text)
+            await self.update_message(peer_id, message_id, text)
 
 
     async def get_active_member_profiles(self, peer_id: int
@@ -252,4 +252,4 @@ class VkApiAccessor(BaseAccessor):
         except ClientConnectionError as e:
             self.logger.error(exc_info=e)
             self.session = ClientSession(connector=TCPConnector(verify_ssl=False))
-            return self.get_active_member_profiles(peer_id)
+            return await self.get_active_member_profiles(peer_id)
