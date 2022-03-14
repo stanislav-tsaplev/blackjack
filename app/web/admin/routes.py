@@ -5,7 +5,7 @@ from app.web.admin.views.login import (
     AdminLoginView, 
     AdminCurrentView,
 )
-from app.web.admin.views.games import AdminInfoGamesView
+# from app.web.admin.views.games import AdminInfoGamesView
 
 if TYPE_CHECKING:
     from app.web.app import Application
