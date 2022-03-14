@@ -8,7 +8,12 @@ from aiohttp_session import new_session
 from app.web.app import View
 from app.web.mixins import AuthRequiredMixin
 from app.web.utils import json_response
-from app.web.admin.schemes import AdminSchema
+from app.web.admin.schemes.login import AdminSchema
+
+
+class AdminIndexView(View):
+    async def get(self):
+        return json_response()
 
 
 class AdminLoginView(View):
