@@ -1,13 +1,14 @@
 from pathlib import Path
 from datetime import datetime, timezone
 import functools
+import re
 
 import pytest
 from freezegun import freeze_time
 from aioresponses import aioresponses
 from gino import GinoEngine
 
-from app.web.app import setup_app
+from bot_app import setup_bot_app
 from tests.fixtures.admin import *
 from tests.fixtures.bot import *
 
@@ -56,7 +57,7 @@ def mocked_vk_api_long_polling(mocked_request):
 
 @pytest.fixture
 def app(mocked_vk_api_long_polling):
-    return setup_app(TEST_CONFIG_PATH)
+    return setup_bot_app(TEST_CONFIG_PATH)
 
 
 @pytest.fixture

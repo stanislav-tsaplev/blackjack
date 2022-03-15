@@ -1,3 +1,3 @@
 release: alembic upgrade head
-bot: python main.py
-web: python main.py
+bot: python start_bot_app.py
+web: python start_admin_app.py

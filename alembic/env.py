@@ -6,8 +6,8 @@ from sqlalchemy import engine_from_config
 from sqlalchemy import pool
 
 from alembic import context
-from app.config import DbConfig
-from app.db.core.gino import gino_orm
+from common.config import DbConfig
+from common.db.gino_instance import gino_instance
 
 
 with open(os.environ["CONFIGPATH"]) as config_file:
@@ -26,7 +26,7 @@ fileConfig(config.config_file_name)
 # for 'autogenerate' support
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
-target_metadata = gino_orm
+target_metadata = gino_instance
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
