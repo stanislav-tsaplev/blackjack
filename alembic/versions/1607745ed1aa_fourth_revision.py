@@ -11,7 +11,7 @@ from sqlalchemy.dialects import postgresql
 from gino import Gino
 
 
-gino_orm = Gino()
+gino_instance = Gino()
 
 # revision identifiers, used by Alembic.
 revision = '1607745ed1aa'
@@ -47,7 +47,7 @@ def upgrade():
     sa.Column('chat_id', sa.Integer(), nullable=True),
     sa.Column('started_at', sa.DateTime(), nullable=True),
     sa.Column('closed_at', sa.DateTime(), nullable=True),
-    sa.Column('state', gino_orm.Enum('OPENED', 'BETTING', 'INITIAL_DEAL', 'DEALING', 'DEALER_GAME', 'PAYING_OUT', 'CLOSED', 'TERMINATED', name='gamesessionstate'), nullable=False),
+    sa.Column('state', gino_instance.Enum('OPENED', 'BETTING', 'INITIAL_DEAL', 'DEALING', 'DEALER_GAME', 'PAYING_OUT', 'CLOSED', 'TERMINATED', name='gamesessionstate'), nullable=False),
     sa.ForeignKeyConstraint(['chat_id'], ['game_chats.chat_id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id')
     )
@@ -68,7 +68,7 @@ def upgrade():
     sa.Column('timestamp', sa.BigInteger(), nullable=True),
     sa.Column('bet', sa.Integer(), nullable=True),
     sa.Column('payout_ratio', sa.Integer(), nullable=True),
-    sa.Column('state', gino_orm.Enum('BETTING', 'INITIAL_DEAL', 'DEALING', 'STANDING', 'BLACKJACKED', 'BUSTED', 'PAIDOUT', 'CUTOUT', name='playersessionstate'), nullable=False),
+    sa.Column('state', gino_instance.Enum('BETTING', 'INITIAL_DEAL', 'DEALING', 'STANDING', 'BLACKJACKED', 'BUSTED', 'PAIDOUT', 'CUTOUT', name='playersessionstate'), nullable=False),
     sa.ForeignKeyConstraint(['game_session_id'], ['game_sessions.id'], ondelete='CASCADE'),
     sa.ForeignKeyConstraint(['player_id'], ['players.id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id')
@@ -77,8 +77,8 @@ def upgrade():
     op.create_table('card_deals',
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.Column('player_session_id', sa.Integer(), nullable=True),
-    sa.Column('card_rank', gino_orm.Enum('Ace', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Jack', 'Queen', 'King', name='cardrank'), nullable=False),
-    sa.Column('card_suit', gino_orm.Enum('Clubs', 'Diamonds', 'Hearts', 'Spades', name='cardsuit'), nullable=False),
+    sa.Column('card_rank', gino_instance.Enum('Ace', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Jack', 'Queen', 'King', name='cardrank'), nullable=False),
+    sa.Column('card_suit', gino_instance.Enum('Clubs', 'Diamonds', 'Hearts', 'Spades', name='cardsuit'), nullable=False),
     sa.ForeignKeyConstraint(['player_session_id'], ['player_sessions.id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id')
     )
