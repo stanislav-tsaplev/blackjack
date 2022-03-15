@@ -31,6 +31,10 @@ class View(AiohttpView):
     @property
     def request(self) -> Request:
         return super().request
+    
+    @property
+    def store(self) -> AdminStore:
+        return self.request.app.db_store
 
     @property
     def data(self) -> dict:

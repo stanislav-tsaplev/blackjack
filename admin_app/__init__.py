@@ -8,7 +8,7 @@ from common.db import setup_database
 from admin_app.store import setup_admin_store
 from admin_app.web.routes import setup_routes
 from admin_app.web.middlewares import setup_middlewares
-from admin_app.base_utils import AdminApplication
+from admin_app.base_classes import AdminApplication
 
 
 app = AdminApplication()

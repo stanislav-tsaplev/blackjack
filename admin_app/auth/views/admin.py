@@ -4,7 +4,7 @@ from aiohttp_apispec import docs, request_schema
 from aiohttp_session import new_session
 from aiohttp.web_exceptions import HTTPForbidden
 
-from admin_app.base_utils import View
+from admin_app.base_classes import View
 from admin_app.web.mixins import AuthRequiredMixin
 from admin_app.web.utils import json_response
 from admin_app.auth.schemes.admin import AdminSchema
