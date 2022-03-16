@@ -22,21 +22,11 @@ class Database:
 
     async def connect(self, *args, **kwargs):
         self.logger.info('connect')
-        
-        # self._engine = await create_engine(
-        #     URL(
-        #         drivername="asyncpg",
-        #         host=self.app.config.db.host,
-        #         port=self.app.config.db.port,
-        #         database=self.app.config.db.dbname,
-        #         username=self.app.config.db.user,
-        #         password=self.app.config.db.password,
-        #     ),
-        #     min_size=1,
-        #     max_size=1,
-        # )
+
         self._engine = await create_engine(
-            os.environ["DATABASE_URL"]
+            os.environ["DATABASE_URL"],
+            min_size=1,
+            max_size=1,
         )
         self.orm = gino_instance
         self.orm.bind = self._engine

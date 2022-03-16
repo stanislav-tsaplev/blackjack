@@ -1,18 +1,12 @@
 import os
 from logging.config import fileConfig
 
-import yaml
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
 
 from alembic import context
-from common.config import DbConfig
 from common.db.gino_instance import gino_instance
 
-
-with open(os.environ["CONFIGPATH"]) as config_file:
-    config_data = yaml.safe_load(config_file)
-    db_config = DbConfig(**config_data.get("db", {}))
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -33,12 +27,6 @@ target_metadata = gino_instance
 # my_important_option = config.get_main_option("my_important_option")
 # ... etc.
 
-def set_sqlalchemy_url(host: str, port: int, user: str, password: str, dbname: str):
-    config.set_main_option(
-        "sqlalchemy.url", 
-        f"postgres://{user}:{password}@{host}:{port}/{dbname}"
-    )
-
 def run_migrations_offline():
     """Run migrations in 'offline' mode.
 
@@ -51,7 +39,10 @@ def run_migrations_offline():
     script output.
 
     """
-    set_sqlalchemy_url(**db_config.__dict__)
+    config.set_main_option(
+        "sqlalchemy.url",
+        os.environ["DATABASE_URL"]
+    )
 
     url = config.get_main_option("sqlalchemy.url")
     context.configure(
@@ -72,7 +63,10 @@ def run_migrations_online():
     and associate a connection with the context.
 
     """
-    set_sqlalchemy_url(**db_config.__dict__)
+    config.set_main_option(
+        "sqlalchemy.url",
+        os.environ["DATABASE_URL"]
+    )
     
     connectable = engine_from_config(
         config.get_section(config.config_ini_section),

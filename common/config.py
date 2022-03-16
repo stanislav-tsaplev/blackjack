@@ -22,21 +22,12 @@ class BotConfig:
     group_id: int
 
 
-@dataclass
-class DbConfig:
-    host: str
-    port: int
-    dbname: str
-    user: str
-    password: str
-
 
 @dataclass
 class Config:
     admin: AdminConfig
     session: SessionConfig = None
     bot: BotConfig = None
-    db: DbConfig = None
 
 
 def setup_config(app: AiohttpApplication, config_path: str):
@@ -47,5 +38,4 @@ def setup_config(app: AiohttpApplication, config_path: str):
         session=SessionConfig(**config_data["session"]),
         admin=AdminConfig(**config_data["admin"]),
         bot=BotConfig(**config_data["bot"]),
-        db=DbConfig(**config_data["db"]),
     )
