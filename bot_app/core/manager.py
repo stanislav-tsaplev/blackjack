@@ -1,5 +1,5 @@
 from typing import (
-    Optional, Union, Callable, Coroutine, Mapping, TYPE_CHECKING
+    Any, Optional, Union, Callable, Coroutine, Mapping, TYPE_CHECKING
 )
 from logging import getLogger
 from string import Template
@@ -8,12 +8,16 @@ import asyncio
 
 from bot_app.vk_api.models import *
 from bot_app.vk_api.utils import is_sent_from_chat
+from bot_app.game.models import *
 from bot_app.utils.playcards import get_random_card
 from bot_app.utils.player_hand import PlayerHand
-from bot_app.game.models import *
 from bot_app.core.data_extractors import *
-from bot_app.core.settings import *
+(
+    bet_data_extractor,
+    hit_or_stand_data_extractor,
+)
 from bot_app.resources import BOT_MESSAGES, BOT_KEYBOARDS
+from bot_app.core.settings import *
 
 if TYPE_CHECKING:
     from bot_app import BotApplication
@@ -24,11 +28,7 @@ class BotManager:
         self.logger = getLogger(self.__class__.__name__)
         self.app = app
 
-        self.data_extractors: Mapping[str, Callable[ [str], Union[str, list, dict] ]] = {
-            "bet_data_extractor": bet_data_extractor,
-            "hit_or_stand_data_extractor": hit_or_stand_data_extractor,
-        }
-        self.command_handlers: Mapping[str, Coroutine[int, int, None]] = {
+        self.command_handlers: Mapping[str, Coroutine[Any, tuple[int, int], None]] = {
             "game": self.launch_game,
             "игра": self.launch_game,
             "hand": self.show_player_hand,
@@ -44,6 +44,11 @@ class BotManager:
             "стоп": self.terminate_game,
         }
 
+        self.data_extractors: Mapping[str, Callable[ [str], Union[str, list, dict] ]] = {
+            "bet_data_extractor": bet_data_extractor,
+            "hit_or_stand_data_extractor": hit_or_stand_data_extractor,
+        }
+
     async def restore_opened_games(self, *args, **kwargs):
         opened_game_sessions = await self.app.db_store.game_sessions \
                                                 .get_all_opened_game_sessions()
@@ -54,14 +59,14 @@ class BotManager:
         chat_id: int,
         updating_message_id: int, 
         updating_message_text_template: Template
-    ) -> Callable[[Optional[int]], None]:
-        async def vk_countdown(countdown: Optional[int]) -> None:
+    ) -> Coroutine[Any, Optional[int], None]:
+        async def vk_countdown_callback(countdown: Optional[int]) -> None:
             countdown_indicator = ""
             # countdown == None and countdown == 0 are treated differently
             # the latter means time was over 
-            # while the former means choice was made
+            # while the former means choice has been made
             if countdown is not None:   
-                countdown_indicator = ( # ⏳⏱
+                countdown_indicator = (
                     f"⏱{countdown} "
                     f"{'||' * (countdown // DB_POLLING_FREQUENCY)}"
                 )
@@ -73,10 +78,11 @@ class BotManager:
                     countdown=countdown_indicator
                 )
             )
-        return vk_countdown
+        return vk_countdown_callback
 
     async def get_deferred_player_response(self, user_id: int, chat_id: int,
-            countdown_callback: Callable[[Optional[int]], None]) -> Union[str, list, dict]:
+            countdown_callback: Coroutine[Any, Optional[int], None]
+    ) -> Union[str, list, dict]:
         async def _get_deferred_player_response():
             countdown = TIME_TO_WAIT_PLAYER_RESPONSE
             await countdown_callback(countdown)
@@ -100,7 +106,7 @@ class BotManager:
         
         await player_response_task
         return player_response_task.result()
-
+    
     async def restore_game(self, game_session: GameSession):
         game_phases = [
             self.betting,       # for GameSessionState.OPENED
@@ -526,9 +532,34 @@ class BotManager:
             await self.app.db_store.player_sessions \
                                     .pay_out_player(player_session, player_payout_ratio)
 
+    async def cut_out_player(self, chat_id: int, user_id: int):
+        player_session = await self.app.db_store.player_sessions \
+                                    .get_current_player_session(user_id, chat_id)
+        if player_session is None:
+            return
+
+        user_profile = player_session.player.user_profile
+        await self.app.db_store.player_sessions.cut_out_player(player_session)
+        await self.app.vk_api.send_message(chat_id,
+                                f'{BOT_MESSAGES["game.player"]} '
+                                f'{BOT_MESSAGES["game.exit"]}'.format(
+                                    first_name=user_profile.first_name,
+                                    last_name=user_profile.last_name))
+
     async def end_game(self, game_session: GameSession):
         await self.app.db_store.game_sessions.close_game_session(game_session)
         await self.app.vk_api.send_message(game_session.chat_id, BOT_MESSAGES["game.end"])
+
+    async def terminate_game(self, chat_id: int, user_id: int):
+        game_session = await self.app.db_store.game_sessions \
+                                        .get_current_game_session(chat_id)
+        await self.app.db_store.game_sessions.terminate_game_session(game_session)
+        await self.app.vk_api.send_message_with_keyboard(game_session.chat_id, 
+                                                BOT_MESSAGES["game.terminated"],
+                                                BOT_KEYBOARDS["empty"])
+        for task in asyncio.all_tasks():
+            if task.get_name() == str(chat_id):
+                task.cancel()
 
     async def show_player_hand(self, chat_id: int, user_id: int):
         player_session = await self.app.db_store.player_sessions \
@@ -578,30 +609,7 @@ class BotManager:
             )
         )
 
-    async def cut_out_player(self, chat_id: int, user_id: int):
-        player_session = await self.app.db_store.player_sessions \
-                                    .get_current_player_session(user_id, chat_id)
-        if player_session is None:
-            return
-
-        user_profile = player_session.player.user_profile
-        await self.app.db_store.player_sessions.cut_out_player(player_session)
-        await self.app.vk_api.send_message(chat_id,
-                                f'{BOT_MESSAGES["game.player"]} '
-                                f'{BOT_MESSAGES["game.exit"]}'.format(
-                                    first_name=user_profile.first_name,
-                                    last_name=user_profile.last_name))
-
-    async def terminate_game(self, chat_id: int, user_id: int):
-        game_session = await self.app.db_store.game_sessions \
-                                        .get_current_game_session(chat_id)
-        await self.app.db_store.game_sessions.terminate_game_session(game_session)
-        await self.app.vk_api.send_message_with_keyboard(game_session.chat_id, 
-                                                BOT_MESSAGES["game.terminated"],
-                                                BOT_KEYBOARDS["empty"])
-        for task in asyncio.all_tasks():
-            if task.get_name() == str(chat_id):
-                task.cancel()
+######
 
     async def handle_command(self, message: VkApiMessage):
         command = message.text.removeprefix(COMMAND_PREFIX).strip()
