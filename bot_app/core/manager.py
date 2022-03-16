@@ -174,7 +174,7 @@ class BotManager:
                                                 GameSessionState.BETTING)
         await self.app.vk_api.send_message(game_session.chat_id, BOT_MESSAGES["bet.started"])
         for player_session in game_session.player_sessions:
-            if player_session.state != PlayerSessionState.BETTING:
+            if player_session.state is not PlayerSessionState.BETTING:
                 break
 
             user_profile = player_session.player.user_profile
@@ -245,7 +245,7 @@ class BotManager:
                                             .get_dealing_players(game_session)
         
         for player_session in dealing_players:
-            if player_session.state != PlayerSessionState.INITIAL_DEAL:
+            if player_session.state is not PlayerSessionState.INITIAL_DEAL:
                 break
 
             card1 = get_random_card()
@@ -479,7 +479,7 @@ class BotManager:
         for player_session in broken_out_players:
             user_profile = player_session.player.user_profile
 
-            if player_session.state == PlayerSessionState.BUSTED:
+            if player_session.state is PlayerSessionState.BUSTED:
                 await self.app.vk_api.send_message(game_session.chat_id,
                                         f'{BOT_MESSAGES["game.player"]} '
                                         f'{BOT_MESSAGES["payout.player_bust"]}'.format(
