@@ -1,5 +1,5 @@
 import random
-from typing import List, Optional, TYPE_CHECKING
+from typing import List, Tuple, Optional, TYPE_CHECKING
 
 from aiohttp import ClientConnectionError, TCPConnector
 from aiohttp.client import ClientSession
@@ -7,8 +7,8 @@ from aiohttp.client import ClientSession
 from common.base.accessor import BaseAccessor
 from bot_app.vk_api.models import (
     VkApiUpdate,
-    VkApiMembersResponse,
     VkApiMemberProfile,
+    VkApiChatSettings,
 )
 from bot_app.core.poller import Poller
 from bot_app.vk_api.utils import build_query_url
@@ -222,15 +222,16 @@ class VkApiAccessor(BaseAccessor):
             self.session = ClientSession(connector=TCPConnector(verify_ssl=False))
             await self.update_message(peer_id, message_id, text)
 
-
-    async def get_active_member_profiles(self, peer_id: int
-    ) -> List[VkApiMemberProfile]:
+    async def get_chat_settings(
+        self, peer_id: int
+    ) -> Tuple[VkApiChatSettings, List[VkApiMemberProfile]]:
         query_url = build_query_url(
             api_path=VK_API_PATH,
-            api_method="messages.getConversationMembers",
+            api_method="messages.getConversationsById",
             params={
-                "peer_id": peer_id,
-                "fields": "online",
+                "peer_ids": peer_id,
+                "extended": 1,
+                "fields": "city, screen_name, online",
                 "access_token": self.app.config.bot.token,
             },
         )
@@ -239,18 +240,23 @@ class VkApiAccessor(BaseAccessor):
                 json = await response.json()
 
                 if "error" not in json:
-                    chat_members_info = VkApiMembersResponse.from_dict(json["response"])
-                    active_chat_member_profiles = [
-                        profile for profile 
-                        in chat_members_info.profiles 
-                        if profile.online
+                    chat_settings = VkApiChatSettings.from_dict(
+                        json["response"]["items"][0]["chat_settings"]
+                    )
+
+                    online_member_profiles = [
+                        VkApiMemberProfile.from_dict(profile_json)
+                        for profile_json in json["response"]["profiles"]
+                        if profile_json["online"]
                     ]
 
-                    self.logger.info(f"active members in chat {peer_id}: {active_chat_member_profiles}")
-                    return active_chat_member_profiles
+                    self.logger.info(f"online members in chat {peer_id}: {online_member_profiles}")
+                    return chat_settings, online_member_profiles
+
                 else:
                     self.logger.error(f"error during getting chat members: {json}")
+
         except ClientConnectionError as e:
             self.logger.error(exc_info=e)
             self.session = ClientSession(connector=TCPConnector(verify_ssl=False))
-            return await self.get_active_member_profiles(peer_id)
+            return await self.get_chat_settings(peer_id)

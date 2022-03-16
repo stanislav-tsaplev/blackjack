@@ -56,13 +56,14 @@ class GameSessionAccessor(BaseAccessor):
                 )
             ).gino.one_or_none()
 
-    async def create_game_session(self, chat_id: int, 
+    async def create_game_session(self, game_chat: GameChat,
                                         user_profiles: List[UserProfile]) -> GameSession:
         async with self.app.database.orm.transaction() as tx:
             await insert(GameChat).values(
                 [
                     {
-                        "chat_id": chat_id
+                        "chat_id": game_chat.chat_id,
+                        "name": game_chat.name
                     }
                 ]
             ).on_conflict_do_nothing().gino.status()
@@ -88,12 +89,12 @@ class GameSessionAccessor(BaseAccessor):
                 [
                     {
                         "vk_id": self.app.config.bot.group_id,
-                        "chat_id": chat_id,
+                        "chat_id": game_chat.chat_id,
                     }
                 ] + [
                     {
                         "vk_id": user_profile.vk_id,
-                        "chat_id": chat_id,
+                        "chat_id": game_chat.chat_id,
                         "money": INITIAL_MONEY_SUM
                     }
                     for user_profile in user_profiles
@@ -102,14 +103,14 @@ class GameSessionAccessor(BaseAccessor):
 
             dealer = await Player.query.where(
                 db.and_(
-                    Player.chat_id == chat_id,
+                    Player.chat_id == game_chat.chat_id,
                     Player.vk_id == self.app.config.bot.group_id
                 )
             ).gino.one()
 
             players = await Player.query.where(
                 db.and_(
-                    Player.chat_id == chat_id,
+                    Player.chat_id == game_chat.chat_id,
                     Player.vk_id.in_([user_profile.vk_id 
                                         for user_profile in user_profiles]
                     ),
@@ -117,7 +118,7 @@ class GameSessionAccessor(BaseAccessor):
             ).gino.all()
 
             game_session = await GameSession.create(
-                chat_id=chat_id,
+                chat_id=game_chat.chat_id,
                 started_at=datetime.utcnow()   # TODO: подружить freezegun с offset-aware datetime
             )
             

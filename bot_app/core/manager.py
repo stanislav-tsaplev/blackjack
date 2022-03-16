@@ -145,18 +145,23 @@ class BotManager:
         return current_game_session_exists
 
     async def start_game(self, chat_id: int) -> GameSession:
-        active_member_profiles = \
-            await self.app.vk_api.get_active_member_profiles(chat_id)
-            
+        chat_settings, online_member_profiles = await self.app.vk_api \
+                                                        .get_chat_settings(chat_id)
+        game_chat = GameChat(
+            chat_id=chat_id,
+            name=chat_settings.title
+        )
         user_profiles = [
             UserProfile(
                 vk_id=member_profile.id,
                 first_name=member_profile.first_name,
-                last_name=member_profile.last_name
-            ) for member_profile in active_member_profiles
+                last_name=member_profile.last_name,
+                city=member_profile.city
+            ) for member_profile in online_member_profiles
         ]
+
         game_session = await self.app.db_store.game_sessions \
-                                        .create_game_session(chat_id, user_profiles)
+                                .create_game_session(game_chat, user_profiles)
         
         await self.app.vk_api.send_message(chat_id, BOT_MESSAGES["game.start"])
         await self.app.vk_api.send_message(chat_id,

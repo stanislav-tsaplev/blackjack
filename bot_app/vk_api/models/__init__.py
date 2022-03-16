@@ -1,2 +1,2 @@
 from .update import *
-from .member import *
+from .chat_member import *

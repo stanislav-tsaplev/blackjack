@@ -7,7 +7,7 @@ class VkApiMemberProfile:
     id: int
     first_name: str
     last_name: str
-    online: bool
+    city: str
 
     @classmethod
     def from_dict(cls, d: Mapping[str, Union[str, list, dict]]) -> "VkApiMemberProfile":
@@ -15,26 +15,26 @@ class VkApiMemberProfile:
             return None
 
         return cls(
-            id = int(d.get("id")),
+            id = d.get("id"),
             first_name = d.get("first_name"),
             last_name = d.get("last_name"),
-            online = bool(d.get("online")),
+            city = d.get("city", {}).get("title"),
         )
 
+
 @dataclass
-class VkApiMembersResponse:
-    count: int
-    profiles: List[VkApiMemberProfile]
+class VkApiChatSettings:
+    title: str
+    members_count: int
+    active_ids: List[int]
 
     @classmethod
-    def from_dict(cls, d: Mapping[str, Union[str, list, dict]]) -> "VkApiMembersResponse":
+    def from_dict(cls, d: Mapping[str, Union[str, list, dict]]) -> "VkApiMemberProfile":
         if d is None:
             return None
 
         return cls(
-            count = int(d.get("count")),
-            profiles = [
-                VkApiMemberProfile.from_dict(profile)
-                for profile in d.get("profiles")
-            ],
+            title=d.get("title"),
+            members_count=int(d.get("members_count")),
+            active_ids=d.get("active_ids"),
         )
