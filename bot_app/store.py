@@ -4,7 +4,7 @@ from dataclasses import dataclass
 if TYPE_CHECKING:
     from bot_app import BotApplication
 
-from bot_app.game.accessors import *
+from bot_app.accessors import *
 
 
 @dataclass

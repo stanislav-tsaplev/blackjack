@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING
 
-from admin_app.game_info.views import (
-    GameInfoSummaryView
+from admin_app.games.views import (
+    GameSummaryView
 )
 
 if TYPE_CHECKING:
@@ -9,4 +9,4 @@ if TYPE_CHECKING:
 
 
 def setup_routes(app: "AdminApplication"):
-    app.router.add_view("/admin.info.summary", GameInfoSummaryView)
+    app.router.add_view("/admin.summary", GameSummaryView)

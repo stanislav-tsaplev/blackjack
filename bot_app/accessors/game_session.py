@@ -4,8 +4,8 @@ from time import time_ns
 
 from sqlalchemy.dialects.postgresql import insert
 
+from common.db.gino_models import *
 from common.base.accessor import BaseAccessor
-from bot_app.game.models import *
 from bot_app.core.settings import INITIAL_MONEY_SUM
 
 

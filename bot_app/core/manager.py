@@ -6,9 +6,9 @@ from string import Template
 
 import asyncio
 
+from common.db.gino_models import *
 from bot_app.vk_api.models import *
 from bot_app.vk_api.utils import is_sent_from_chat
-from bot_app.game.models import *
 from bot_app.utils.playcards import get_random_card
 from bot_app.utils.player_hand import PlayerHand
 from bot_app.core.data_extractors import *

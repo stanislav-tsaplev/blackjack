@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING
 from dataclasses import dataclass
 
 from admin_app.auth.accessors.admin import *
-from admin_app.game_info.accessors.summary import *
+from admin_app.games.accessor import GamesAccessor
 
 if TYPE_CHECKING:
     from admin_app import AdminApplication
@@ -11,11 +11,11 @@ if TYPE_CHECKING:
 @dataclass
 class AdminStore:
     admins: AdminAccessor
-    game_info: GameInfoAccessor
+    games: GamesAccessor
 
 
 def setup_admin_store(app: "AdminApplication"):
     app.db_store = AdminStore(
         admins=AdminAccessor(app),
-        game_info=GameInfoAccessor(app),
+        games=GamesAccessor(app),
     )

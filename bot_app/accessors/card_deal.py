@@ -3,8 +3,8 @@ from typing import Tuple
 from sqlalchemy.dialects.postgresql import insert
 
 from common.db.gino_instance import gino_instance as db
+from common.db.gino_models import PlayerSession, PlayerSessionState, CardDeal
 from common.base.accessor import BaseAccessor
-from bot_app.game.models import PlayerSession, PlayerSessionState, CardDeal
 from bot_app.utils.playcards import Card
 from bot_app.utils.player_hand import PlayerHand
 

@@ -3,8 +3,8 @@ import json
 
 from sqlalchemy.dialects.postgresql import insert
 
+from common.db.gino_models import *
 from common.base.accessor import BaseAccessor
-from bot_app.game.models import *
 
 
 class PlayerDataportAccessor(BaseAccessor):

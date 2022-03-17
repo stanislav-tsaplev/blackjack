@@ -31,6 +31,7 @@ class GameSession(db.Model):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self._player_sessions = list()
+        self._game_chat = None
 
     @property
     def dealer_session(self):
