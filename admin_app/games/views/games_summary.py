@@ -1,15 +1,16 @@
 import json
 
-from aiohttp_apispec import docs
+from aiohttp_apispec import docs, querystring_schema
 from aiohttp.web_exceptions import HTTPForbidden
 
 from admin_app.base_classes import View
 from admin_app.web.mixins import AuthRequiredMixin
 from admin_app.web.utils import json_response
-from admin_app.games.schemes import GameSummarySchema#, GameChatsSchema
+from admin_app.games.schemes import GameSummarySchema, PaginationQuerystringSchema
 
 
-class GameSummaryView(AuthRequiredMixin, View):
+# class GameSummaryView(AuthRequiredMixin, View):
+class GameSummaryView(View):
     @docs(
         tags=["admin", "game"],
         summary="Get games info",
