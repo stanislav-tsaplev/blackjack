@@ -30,3 +30,8 @@ class GameSummarySchema(Schema):
         
     total = fields.Int(required=True)
     games = fields.Nested(GameInfoSchema, many=True, required=True)
+
+
+class PaginationQuerystringSchema(Schema):
+    offset = fields.Int(required=False)
+    limit = fields.Int(required=False)

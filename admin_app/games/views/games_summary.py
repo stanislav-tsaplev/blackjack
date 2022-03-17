@@ -20,14 +20,11 @@ class GameSummaryView(AuthRequiredMixin, View):
             403: {"description": "Invalid credentials"},
         },
     )
+    @querystring_schema(PaginationQuerystringSchema)
     async def get(self):
         query_params = self.request.query
         offset = query_params.get("offset")
-        if offset is not None:
-            offset = int(offset)
         limit = query_params.get("limit")
-        if limit is not None:
-            limit = int(limit)
 
         games_summary = await self.store.games.get_summary(offset, limit)
         return json_response(data=GameSummarySchema().dump(games_summary))
