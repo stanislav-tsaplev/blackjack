@@ -2,11 +2,23 @@ import json
 
 
 BOT_MESSAGES = {
-    "player_info.money": "У вас в кошельке:",
-    "player_info.hand": "У вас на руке:",
-    "player_info.out_of_game": "⏻ Эта информация доступна только в ходе игры",
-    "player_info.top_header": "⏻ Самые успешные игроки:",
-    "player_info.top_item": "⏿ [{first_name} {last_name}]@[{chat_name}] ${money}",
+    "info.commands_list_header": "⏻ Список доступных команд бота: ",
+    "info.commands_list": "<br>".join(
+        [
+            "!game !игра | НАЧАТЬ ИГРУ",
+            "!hand !рука !cards !карты | ПОКАЗАТЬ КАРТЫ НА РУКЕ",
+            "!money !деньги !сумма | ПОКАЗАТЬ ДОСТУПНУЮ СУММУ",
+            "!top !топ | ПОСМОТРЕТЬ ТОП ИГРОКОВ",
+            "!quit !exit !выход | ВЫЙТИ ИЗ ИГРЫ",
+            "!stop  !помощь !cmd !команды | ПОКАЗАТЬ ЭТУ ПОДСКАЗКУ",
+        ]
+    ),
+
+    "info.money": "У вас в кошельке:",
+    "info.hand": "У вас на руке:",
+    "info.out_of_game": "⏻ Эта информация доступна только в ходе игры",
+    "info.top_header": "⏻ Самые успешные игроки:",
+    "info.top_item": "⏿ [{first_name} {last_name}]@[{chat_name}] ${money}",
     
     "game.restored": "⏻ Игра восстановлена после перезапуска сервера",
     "game.already_started": "⏻ Игра уже идет. Чтобы начать новую игру, завершите текущую",

@@ -31,17 +31,30 @@ class BotManager:
         self.command_handlers: Mapping[str, Coroutine[Any, tuple[int, int], None]] = {
             "game": self.launch_game,
             "игра": self.launch_game,
+
             "hand": self.show_player_hand,
             "рука": self.show_player_hand,
+            "cards": self.show_player_hand,
+            "карты": self.show_player_hand,
+            
             "money": self.show_player_money,
+            "деньги": self.show_player_money,
             "сумма": self.show_player_money,
+            
             "top": self.show_players_top,
             "топ": self.show_players_top,
+            
             "quit": self.cut_out_player,
             "exit": self.cut_out_player,
             "выход": self.cut_out_player,
+            
             "stop": self.terminate_game,
             "стоп": self.terminate_game,
+
+            "help": self.show_help,
+            "помощь": self.show_help,
+            "cmd": self.show_help,
+            "команды": self.show_help,
         }
 
         self.data_extractors: Mapping[str, Callable[ [str], Union[str, list, dict] ]] = {
@@ -570,14 +583,14 @@ class BotManager:
         player_session = await self.app.db_store.player_sessions \
                                     .get_current_player_session(user_id, chat_id)
         if player_session is None:
-            await self.app.vk_api.send_message(chat_id, BOT_MESSAGES["player_info.out_of_game"])
+            await self.app.vk_api.send_message(chat_id, BOT_MESSAGES["info.out_of_game"])
             return
 
         user_profile = player_session.player.user_profile
         hand = await self.app.db_store.card_deals.get_player_hand(player_session)
         await self.app.vk_api.send_message(chat_id,
                                 f'{BOT_MESSAGES["game.player"]} '
-                                f'{BOT_MESSAGES["player_info.hand"]} '
+                                f'{BOT_MESSAGES["info.hand"]} '
                                 f'{hand}'.format(
                                     first_name=user_profile.first_name,
                                     last_name=user_profile.last_name))
@@ -589,7 +602,7 @@ class BotManager:
                        
         await self.app.vk_api.send_message(chat_id,
                                 f'{BOT_MESSAGES["game.player"]} '
-                                f'{BOT_MESSAGES["player_info.money"]} '
+                                f'{BOT_MESSAGES["info.money"]} '
                                 f'{player.money}'.format(
                                     first_name=player.user_profile.first_name,
                                     last_name=player.user_profile.last_name))
@@ -599,12 +612,12 @@ class BotManager:
                                 .get_successful_players_list(PLAYERS_TOP)
         await self.app.vk_api.send_message(
             chat_id, 
-            BOT_MESSAGES["player_info.top_header"]
+            BOT_MESSAGES["info.top_header"]
         )                                             
         await self.app.vk_api.send_message(
             chat_id, 
             "<br>".join(
-                BOT_MESSAGES["player_info.top_item"].format(
+                BOT_MESSAGES["info.top_item"].format(
                     first_name=player.user_profile.first_name,
                     last_name=player.user_profile.last_name,
                     chat_name=player.game_chat.name,
@@ -613,6 +626,14 @@ class BotManager:
                 for player in players_top
             )
         )
+
+    async def show_help(self, chat_id: int, user_id: int):
+        await self.app.vk_api.send_message(
+            chat_id, 
+            f'{BOT_MESSAGES["info.commands_list_header"]}'
+            '<br>'
+            f'{BOT_MESSAGES["info.commands_list"]}"'
+        )           
 
 ######
 
