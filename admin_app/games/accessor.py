@@ -38,11 +38,15 @@ class GamesAccessor(BaseAccessor):
                 GameSession.state == GameSessionState.CLOSED
             ).where(
                 Player.id != self.app.config.bot.group_id
+            ).order_by(
+                GameSession.started_at.desc()
             ).gino.all()
             
         else:
             query = GameSession.query.where(
                 GameSession.state == GameSessionState.CLOSED
+            ).order_by(
+                GameSession.started_at.desc()
             )
 
             if offset is not None:
