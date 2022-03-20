@@ -74,12 +74,14 @@ class GameSessionAccessor(BaseAccessor):
                         "vk_id": self.app.config.bot.group_id,
                         "first_name": "Dealer",
                         "last_name": self.app.config.bot.name,
+                        "city": "Zion",
                     }  
                 ] + [
                     {
                         "vk_id": user_profile.vk_id,
                         "first_name": user_profile.first_name,
-                        "last_name": user_profile.last_name
+                        "last_name": user_profile.last_name,
+                        "city": user_profile.city,
                     }
                     for user_profile in user_profiles
                 ]
