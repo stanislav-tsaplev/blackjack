@@ -19,18 +19,20 @@ class PlayerAccessor(BaseAccessor):
         ).gino.one_or_none()
 
     async def get_successful_players_list(self, 
-        max_size: int = 0, offset: int = 0    
+        chat_id: int, limit: int = 0, offset: int = 0    
     ) -> List[Player]:
         query = Player.load(
-            user_profile=UserProfile,
-            game_chat=GameChat.distinct(GameChat.chat_id)
+            user_profile=UserProfile
         ).query.where(
-            UserProfile.vk_id != self.app.config.bot.group_id
+            db.and_(
+                Player.chat_id == chat_id,
+                UserProfile.vk_id != self.app.config.bot.group_id,
+            )
         ).order_by(
             Player.money.desc()
         )
 
-        if max_size > 0:
-            return await query.limit(max_size).offset(0).gino.all()
+        if limit > 0:
+            return await query.limit(limit).offset(offset).gino.all()
         else:
-            return await query.offset(0).gino.all()
+            return await query.offset(offset).gino.all()

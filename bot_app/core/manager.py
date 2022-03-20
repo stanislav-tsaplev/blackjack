@@ -609,7 +609,7 @@ class BotManager:
 
     async def show_players_top(self, chat_id: int, user_id: int):
         players_top = await self.app.db_store.players \
-                                .get_successful_players_list(PLAYERS_TOP)
+                                .get_successful_players_list(chat_id, PLAYERS_TOP)
         await self.app.vk_api.send_message(
             chat_id, 
             BOT_MESSAGES["info.top_header"]
@@ -620,7 +620,6 @@ class BotManager:
                 BOT_MESSAGES["info.top_item"].format(
                     first_name=player.user_profile.first_name,
                     last_name=player.user_profile.last_name,
-                    chat_name=player.game_chat.name,
                     money=player.money
                 )
                 for player in players_top

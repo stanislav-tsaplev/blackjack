@@ -24,7 +24,7 @@ BOT_MESSAGES = {
     "info.hand": "У вас на руке:",
     "info.out_of_game": "⏻ Эта информация доступна только в ходе игры",
     "info.top_header": "⏻ Самые успешные игроки:",
-    "info.top_item": "⏿ [{first_name} {last_name}]@[{chat_name}] ${money}",
+    "info.top_item": "⏿ [{first_name} {last_name}] ${money}",
     
     "game.restored": "⏻ Игра восстановлена после перезапуска сервера",
     "game.already_started": "⏻ Игра уже идет. Чтобы начать новую игру, завершите текущую",
