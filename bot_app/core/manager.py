@@ -240,7 +240,8 @@ class BotManager:
                                                 f'{BOT_MESSAGES["game.player"]} '
                                                 f'{BOT_MESSAGES["bet.accepted"]}'.format(
                                                     first_name=user_profile.first_name,
-                                                    last_name=user_profile.last_name))
+                                                    last_name=user_profile.last_name,
+                                                    bet=bet))
                 else:
                     await self.app.db_store.player_sessions.cut_out_player(player_session)
                     await self.app.vk_api.send_message(game_session.chat_id,

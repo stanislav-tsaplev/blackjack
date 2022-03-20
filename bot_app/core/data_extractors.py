@@ -1,14 +1,15 @@
 from typing import Union
+import re
 
 
 def bet_data_extractor(message: str) -> Union[str, list, dict]:
-    try:
-        bet = int(message.strip())
-    except ValueError as e:
-        raise ValueError(f"cannot extract bet from message: {message}") from e
-    
-    if bet <= 0:
-        raise ValueError(f"bet must be positive but equals: {bet}")
+    m = re.search("(\d+)", message)
+    if len(m.groups()) == 0:
+        raise ValueError(f"bet message must contain number")
+    if len(m.groups()) > 1:
+        raise ValueError(f"bet message must not contain multiple numbers")
+
+    bet = int(m.group())
     
     return { "bet": bet }
 
